@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
-public record DonoRequest(
+public record UsuarioRequest(
 
         @Size(
                 min = 3, max = 255,
