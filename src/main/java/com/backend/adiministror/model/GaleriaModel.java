@@ -22,28 +22,23 @@ public class GaleriaModel {
     @Column(name = "phone", length = 20)
     private String phone;
 
-    @Column(name = "quantidade_salas")
-    private int quantidadeSalas;
-
     @OneToOne
     @JoinColumn(name = "endereco_id", nullable = false)
     private EnderecoModel endereco;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dono_id", nullable = false)
-    private UsuarioModel user;
+    private UsuarioModel dono;
 
     public GaleriaModel(
             String nome,
             String phone,
-            int quantidadeSalas,
             EnderecoModel endereco,
-            UsuarioModel user
+            UsuarioModel dono
     ) {
         this.nome = nome;
         this.phone = phone;
-        this.quantidadeSalas = quantidadeSalas;
         this.endereco = endereco;
-        this.user = user;
+        this.dono = dono;
     }
 }

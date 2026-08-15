@@ -26,15 +26,17 @@ public class UsuarioModel {
     private String senha;
 
     @Column(name = "role", nullable = false)
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     @Column(name = "phone")
     private String phone;
 
-    public UsuarioModel(String nome, String email, String senha, Role role, String phone) {
+    public UsuarioModel(String nome, String email, String senha, String phone) {
         this.nome = nome;
         this.email = email;
         this.senha = senha;
         this.phone = phone;
+        this.role = Role.USUARIO;
     }
 }
