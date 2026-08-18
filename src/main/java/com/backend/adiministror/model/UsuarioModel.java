@@ -37,7 +37,7 @@ public class UsuarioModel {
         this.email = email;
         this.senha = senha;
         this.phone = phone;
-        this.role = Role.USUARIO;
+        this.role = Role.DONO;
     }
 
     public void atualizrDados(
