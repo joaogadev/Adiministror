@@ -8,5 +8,4 @@ import java.util.UUID;
 
 public interface GaleriaRepository extends JpaRepository<GaleriaModel, UUID> {
     List<GaleriaModel> findByNomeIgnoreCase(String nome);
-    long countBySalaId(UUID salaId);
 }

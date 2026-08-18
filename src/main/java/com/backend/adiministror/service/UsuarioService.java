@@ -9,17 +9,22 @@ import com.backend.adiministror.repository.GaleriaRepository;
 import com.backend.adiministror.repository.SalasRepository;
 import com.backend.adiministror.repository.TenantRepository;
 import com.backend.adiministror.repository.UsuarioRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+@Service
+@RequiredArgsConstructor
 public class UsuarioService {
-    private UsuarioRepository usuarioRepository;
-    private SalasRepository salasRepository;
-    private CurrentUserService currentUserService;
+    private final UsuarioRepository usuarioRepository;
+    private final SalasRepository salasRepository;
+    private final CurrentUserService currentUserService;
+    private final GaleriaRepository galeriaRepository;
 
     public UsuarioResponse create(UsuarioRequest request) {
         String normalizedEmail = normalizedEmail(request.email());
