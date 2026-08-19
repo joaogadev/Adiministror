@@ -41,4 +41,12 @@ public class GaleriaModel {
         this.endereco = endereco;
         this.dono = dono;
     }
+
+    public void atualizarDados(
+            String nome,
+            String phone
+    ) {
+        this.nome = nome;
+        this.phone = phone;
+    }
 }
