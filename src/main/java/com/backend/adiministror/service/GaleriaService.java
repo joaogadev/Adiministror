@@ -59,15 +59,15 @@ public class GaleriaService {
                         "Galeria não encontrada"
                 ));
 
-        EnderecoModel endereco = new EnderecoModel(
-                request.endereco().zipCode(),
-                request.endereco().estado(),
-                request.endereco().cidade(),
-                request.endereco().bairro(),
-                request.endereco().rua(),
-                request.endereco().numero(),
-                request.endereco().complemento()
-        );
+//        EnderecoModel endereco = new EnderecoModel(
+//                request.endereco().zipCode(),
+//                request.endereco().estado(),
+//                request.endereco().cidade(),
+//                request.endereco().bairro(),
+//                request.endereco().rua(),
+//                request.endereco().numero(),
+//                request.endereco().complemento()
+//        );
 
         galeria.atualizarDados(
                 request.nome().trim(),
@@ -94,8 +94,8 @@ public class GaleriaService {
     }
 
     public GaleriaResponse buscar(UUID id) {
-
         GaleriaModel galeria = buscarGaleriaDoUsuario(id);
+
         return GaleriaResponse.from(galeria);
     }
 
@@ -136,5 +136,28 @@ public class GaleriaService {
         }
 
         return galeria;
+    }
+
+    private List<GaleriaResponse> buscarGaleriaPorCidade(UUID galeriaId, String cidade) {
+        UUID usuarioAtual = currentUserService.getCurrentUserId();
+        GaleriaModel galeria = galeriaRepository.findById(galeriaId)
+                .orElseThrow(() -> new RuntimeException("Galeria não encontrada"));
+
+        if (!galeria.getDono().getId().equals(usuarioAtual)) {
+            throw new RuntimeException("Você não tem permissão para acessar esta galeria");
+        }
+
+        if (cidade == null || cidade.trim().isEmpty()) {
+            throw new RuntimeException("Digite uma cidade para buscar");
+        }
+
+        if (!galeria.getEndereco().getCidade().equalsIgnoreCase(cidade)) {
+            throw new RuntimeException("A galeria não pertence à cidade especificada");
+        }
+
+        return galeriaRepository.findByEnderecoCidadeIgnoreCase(cidade.trim())
+                .stream()
+                .map(GaleriaResponse::from)
+                .toList();
     }
 }
