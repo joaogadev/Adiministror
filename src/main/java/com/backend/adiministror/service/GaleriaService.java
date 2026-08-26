@@ -105,7 +105,7 @@ public class GaleriaService {
         }
         return salasRepository.countByGaleriaId(galeriaId);
     }
-    public List<GaleriaResponse> buscarMinhasSlas() {
+    public List<GaleriaResponse> buscarMinhasSalas() {
         UUID usuarioAtual = currentUserService.getCurrentUserId();
 
         return galeriaRepository.findByDono_Id(usuarioAtual)

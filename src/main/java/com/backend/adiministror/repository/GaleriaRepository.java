@@ -14,5 +14,7 @@ public interface GaleriaRepository extends JpaRepository<GaleriaModel, UUID> {
 
     List<GaleriaModel> findByEnderecoCidadeIgnoreCase(String cidade);
 
+    boolean existsByGa
+
     //boolean existsByDonoIdAndNomeIgnoreCase(UUID donoId, String nome); //para evitar que o mesmo usuário crie galerias com o mesmo nome
 }
