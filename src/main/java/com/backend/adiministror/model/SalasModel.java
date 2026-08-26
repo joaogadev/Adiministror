@@ -30,4 +30,8 @@ public class SalasModel {
         this.nome = nome;
         this.galeria = galeria;
     }
+
+    public void atualizarDados(String nome) {
+        this.nome = nome;
+    }
 }
