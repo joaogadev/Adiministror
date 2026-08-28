@@ -1,7 +1,7 @@
 package com.backend.adiministror.service;
 
-import com.backend.adiministror.dto.GaleriaRequest;
-import com.backend.adiministror.dto.GaleriaResponse;
+import com.backend.adiministror.dto.request.GaleriaRequest;
+import com.backend.adiministror.dto.response.GaleriaResponse;
 import com.backend.adiministror.model.EnderecoModel;
 import com.backend.adiministror.model.GaleriaModel;
 import com.backend.adiministror.model.UsuarioModel;
