@@ -24,7 +24,7 @@ public class AluguelModel {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inquilino_id")
-    private UsuarioModel inquilino;
+    private TenantModel inquilino;
 
     @CreationTimestamp
     @Column(name = "data_inicio", nullable = false)
@@ -40,14 +40,25 @@ public class AluguelModel {
 
     public AluguelModel(
             SalasModel salas,
-            UsuarioModel inquilino,
+            TenantModel inquilino,
+            LocalDate dataInicio,
             LocalDate dataVencimento,
             PaymentStatus status
     ) {
         this.sala = salas;
         this.inquilino = inquilino;
-        this.dataInicio = LocalDate.now();
+        this.dataInicio = dataInicio;
         this.dataVencimento = dataVencimento;
         this.status = PaymentStatus.PENDENTE;
+    }
+
+    public void atualizarDados(
+            LocalDate dataVencimento,
+            LocalDate dataInicio,
+            PaymentStatus status
+    ) {
+        this.dataVencimento = dataVencimento;
+        this.dataInicio = dataInicio;
+        this.status = status;
     }
 }
