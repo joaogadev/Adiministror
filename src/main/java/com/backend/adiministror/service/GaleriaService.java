@@ -9,6 +9,7 @@ import com.backend.adiministror.repository.GaleriaRepository;
 import com.backend.adiministror.repository.SalasRepository;
 import com.backend.adiministror.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -105,10 +106,18 @@ public class GaleriaService {
         }
         return salasRepository.countByGaleriaId(galeriaId);
     }
-    public List<GaleriaResponse> buscarMinhasSalas() {
+    public List<GaleriaResponse> buscarMinhasGalerias() {
         UUID usuarioAtual = currentUserService.getCurrentUserId();
 
         return galeriaRepository.findByDono_Id(usuarioAtual)
+                .stream()
+                .map(GaleriaResponse::from)
+                .toList();
+    }
+
+    @PreAuthorize("ADMINISTRADOR")
+    public List<GaleriaResponse> buscarTodas() {
+        return galeriaRepository.findAll()
                 .stream()
                 .map(GaleriaResponse::from)
                 .toList();
