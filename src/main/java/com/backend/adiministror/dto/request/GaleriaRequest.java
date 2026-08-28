@@ -1,6 +1,5 @@
-package com.backend.adiministror.dto;
+package com.backend.adiministror.dto.request;
 
-import com.backend.adiministror.model.EnderecoModel;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

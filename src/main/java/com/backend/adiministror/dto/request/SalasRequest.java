@@ -1,4 +1,4 @@
-package com.backend.adiministror.dto;
+package com.backend.adiministror.dto.request;
 
 import jakarta.validation.constraints.Size;
 import org.springframework.boot.context.properties.bind.DefaultValue;

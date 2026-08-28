@@ -1,4 +1,4 @@
-package com.backend.adiministror.dto;
+package com.backend.adiministror.dto.response;
 
 import com.backend.adiministror.model.DocumentType;
 import com.backend.adiministror.model.TenantModel;

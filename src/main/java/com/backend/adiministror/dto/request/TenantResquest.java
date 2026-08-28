@@ -1,4 +1,4 @@
-package com.backend.adiministror.dto;
+package com.backend.adiministror.dto.request;
 
 import com.backend.adiministror.model.DocumentType;
 import jakarta.validation.Valid;
