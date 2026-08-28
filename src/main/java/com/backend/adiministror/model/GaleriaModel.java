@@ -22,7 +22,7 @@ public class GaleriaModel {
     @Column(name = "phone", length = 20)
     private String phone;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "endereco_id", nullable = false)
     private EnderecoModel endereco;
 
