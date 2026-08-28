@@ -7,8 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -47,27 +46,18 @@ public class SecurityConfig {
         return new SecretKeySpec(keyBytes, "HmacSHA256");
     }
 
-
-    //@Bean
-    //esse cara válida todo o processo de login
-    /*public DaoAuthenticationProvider daoAuthenticationProvider(UserDetailServices userDetailServices, PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailServices);
-
-        //validando as senhas
-        provider.setPasswordEncoder(passwordEncoder);
-
-        return  provider;
-    }*/
-
-    /*@Bean
-    public AuthenticationManager authenticationManager(DaoAuthenticationProvider daoAuthenticationProvider) {
-        return new ProviderManager(daoAuthenticationProvider);
-    }*/
     @Bean
     //gera token jwt
     public JwtEncoder jwtEncoder(SecretKey jwtSecretKey) {
         ImmutableSecret<SecurityContext> secret = new ImmutableSecret<>(jwtSecretKey);
         return new NimbusJwtEncoder(secret);
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration
+    ) throws Exception {
+        return configuration.getAuthenticationManager();
     }
 
     @Bean
