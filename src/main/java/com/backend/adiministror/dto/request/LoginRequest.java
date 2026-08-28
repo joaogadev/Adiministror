@@ -9,6 +9,6 @@ public record LoginRequest(
         String email,
 
         @NotBlank(message = "A senha não pode estar vazia")
-        String password
+        String senha
 ) {
 }
