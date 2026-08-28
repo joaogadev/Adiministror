@@ -44,4 +44,12 @@ public class TenantModel {
         this.documentNumber = documentNumber;
         this.documentType = DocumentType.valueOf(documentType.name());
     }
+
+    public void atualizrDados(
+            String nome, String phone, String email
+    ) {
+        this.nome = nome;
+        this.phone = phone;
+        this.email = email;
+    }
 }
