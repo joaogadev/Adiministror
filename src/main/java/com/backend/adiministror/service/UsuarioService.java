@@ -1,30 +1,31 @@
 package com.backend.adiministror.service;
 
-import com.backend.adiministror.dto.GaleriaRequest;
-import com.backend.adiministror.dto.GaleriaResponse;
-import com.backend.adiministror.dto.UsuarioRequest;
-import com.backend.adiministror.dto.UsuarioResponse;
+import com.backend.adiministror.dto.request.LoginRequest;
+import com.backend.adiministror.dto.request.UsuarioRequest;
+import com.backend.adiministror.dto.response.LoginResponse;
+import com.backend.adiministror.dto.response.UsuarioResponse;
 import com.backend.adiministror.model.UsuarioModel;
-import com.backend.adiministror.repository.GaleriaRepository;
-import com.backend.adiministror.repository.SalasRepository;
-import com.backend.adiministror.repository.TenantRepository;
 import com.backend.adiministror.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
-    private final SalasRepository salasRepository;
     private final CurrentUserService currentUserService;
-    private final GaleriaRepository galeriaRepository;
+    private final TokenService tokenService;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
 
     public UsuarioResponse create(UsuarioRequest request) {
         String normalizedEmail = normalizedEmail(request.email());
@@ -34,16 +35,35 @@ public class UsuarioService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email já cadastrado");
         }
 
+        String senhaHash = passwordEncoder.encode(request.senha());
+
         UsuarioModel usuario = new UsuarioModel(
                 request.nome(),
                 normalizedEmail,
-                request.senha(),
+                senhaHash,
                 normalizedPhone
         );
 
         UsuarioModel savedUser = usuarioRepository.save(usuario);
 
         return UsuarioResponse.from(savedUser);
+    }
+
+    public LoginResponse login (LoginRequest request) {
+        String normalizedEmail = normalizedEmail(request.email());
+        try {
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    normalizedEmail, request.password()
+            );
+
+            Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
+            UsuarioModel user = (UsuarioModel) authentication.getPrincipal();
+
+            return tokenService.generatedToken(user);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas");
+        }
     }
 
     public UsuarioResponse update(String email, UsuarioRequest request) {
