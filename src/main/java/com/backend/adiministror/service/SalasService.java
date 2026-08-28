@@ -1,7 +1,7 @@
 package com.backend.adiministror.service;
 
-import com.backend.adiministror.dto.SalasRequest;
-import com.backend.adiministror.dto.SalasResponse;
+import com.backend.adiministror.dto.request.SalasRequest;
+import com.backend.adiministror.dto.response.SalasResponse;
 import com.backend.adiministror.model.GaleriaModel;
 import com.backend.adiministror.model.SalasModel;
 import com.backend.adiministror.repository.GaleriaRepository;
