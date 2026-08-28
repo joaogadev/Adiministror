@@ -58,9 +58,9 @@ public class SalasService {
         salasRepository.delete(sala);
     }
 
-    public SalasModel buscar(UUID id) {
-        return salasRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
+    public SalasResponse buscar(UUID id) {
+        return SalasResponse.from(salasRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sala não encontrada")));
     }
 
     public List<SalasResponse> buscarPorGaleria(UUID galeriaId) {
