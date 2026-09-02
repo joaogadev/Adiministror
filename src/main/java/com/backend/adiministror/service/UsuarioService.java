@@ -53,7 +53,7 @@ public class UsuarioService {
         String normalizedEmail = normalizedEmail(request.email());
         try {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                    normalizedEmail, request.password()
+                    normalizedEmail, request.senha()
             );
 
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
