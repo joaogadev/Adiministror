@@ -10,6 +10,8 @@ import java.util.UUID;
 public interface GaleriaRepository extends JpaRepository<GaleriaModel, UUID> {
     List<GaleriaModel> findByNomeContainingIgnoreCase(String nome);
 
+    List<GaleriaModel> findByNomeContainingIgnoreCaseAndDono_Id(String nome, UUID donoId);
+
     List<GaleriaModel> findByDono_Id(UUID id);
 
     List<GaleriaModel> findByEnderecoCidadeIgnoreCase(String cidade);

@@ -13,6 +13,8 @@ public interface SalasRepository extends JpaRepository<SalasModel, UUID> {
 
     boolean existsByGaleriaId(UUID id);
 
+    List<SalasModel> findByNomeContainingIgnoreCaseGaleria_Dono_Id(String nome, UUID donoId);
+
     Optional<SalasModel> findById(UUID id);
 
     Optional<SalasModel> findByIdAndGaleriaId(UUID id, UUID galeriaId);

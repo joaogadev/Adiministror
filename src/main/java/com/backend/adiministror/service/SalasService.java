@@ -17,8 +17,7 @@ import java.util.UUID;
 @Service
 public class SalasService {
     private final SalasRepository salasRepository;
-    private UsuarioRepository usuarioRepository;
-    private SalasModel salasModel;
+    private final CurrentUserService currentUserService;
     private final GaleriaRepository galeriaRepository;
 
     public SalasResponse create(UUID galediaId, SalasRequest request) {
@@ -27,6 +26,14 @@ public class SalasService {
 
         if (request.nome() == null || request.nome().trim().isEmpty()) {
             throw new RuntimeException("Nome da sala não pode ser vazio");
+        }
+
+        if (!currentUserService.isAdmin()) {
+            UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+
+            if (!galeriaModel.getDono().getId().equals(usuarioAtual)) {
+                throw new RuntimeException("Você não tem permissão para criar uma sala nesta galeria");
+            }
         }
 
         SalasModel sala = new SalasModel(
@@ -40,8 +47,7 @@ public class SalasService {
     }
 
     public SalasResponse update(UUID id, SalasRequest request) {
-        SalasModel salasModel = salasRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
+        SalasModel salasModel = buscarSalasAutorizadas(id);
 
         salasModel.atualizarDados(request.nome());
 
@@ -51,19 +57,27 @@ public class SalasService {
     }
 
     public void delete(UUID id) {
-        SalasModel sala = salasRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Sala não encontrada"));
+        SalasModel sala = buscarSalasAutorizadas(id);
 
         salasRepository.delete(sala);
     }
 
     public SalasResponse buscar(UUID id) {
-        return SalasResponse.from(salasRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sala não encontrada")));
+        return SalasResponse.from(buscarSalasAutorizadas(id));
     }
 
     public List<SalasResponse> buscarPorGaleria(UUID galeriaId) {
+        GaleriaModel galeria = galeriaRepository.findById(galeriaId)
+                .orElseThrow(() -> new RuntimeException("Galeria não encontrada"));
+
+        if (!currentUserService.isAdmin()) {
+            UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+
+            if (!galeria.getDono().getId().equals(usuarioAtual)) {
+                throw new RuntimeException("Você não tem permissão para acessar esta galeria");
+            }
+        }
+
         return salasRepository.findByGaleriaId(galeriaId).stream()
                 .map(SalasResponse::from)
                 .toList();
@@ -77,11 +91,38 @@ public class SalasService {
 
     }
 
+    private SalasModel buscarSalasAutorizadas(UUID id) {
+        SalasModel sala = salasRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
+
+        if (currentUserService.isAdmin()) {
+            return sala;
+        }
+
+        UUID usuarioAtual = currentUserService.getCurrentUserId();
+
+        UUID donoGaleria = sala.getGaleria().getDono().getId();
+
+        if (!donoGaleria.equals(usuarioAtual)) {
+            throw new RuntimeException("Você não tem permissão para acessar esta sala");
+        }
+
+        return sala;
+    }
+
     public List<SalasResponse> buscarPorNome(String nome) {
+        if(currentUserService.isAdmin()) {
+            return salasRepository
+                    .findByNomeContainingIgnoreCase(nome.trim())
+                    .stream()
+                    .map(SalasResponse::from)
+                    .toList();
+        }
         if (nome == null || nome.trim().isEmpty()) {
             throw new RuntimeException("Digite algo para buscar!");
         }
-        return salasRepository.findByNomeContainingIgnoreCase(nome)
+        return salasRepository
+                .findByNomeContainingIgnoreCaseGaleria_Dono_Id(nome.trim(), currentUserService.getCurrentUserId())
                 .stream()
                 .map(SalasResponse::from)
                 .toList();

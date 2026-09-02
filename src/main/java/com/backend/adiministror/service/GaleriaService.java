@@ -50,25 +50,7 @@ public class GaleriaService {
     }
 
     public GaleriaResponse update(UUID id, GaleriaRequest request){
-        UUID usuarioAtal = currentUserService.getCurrentUserId();
-
-        UsuarioModel dono = usuarioRepository.findById(usuarioAtal)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-        GaleriaModel galeria = galeriaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(
-                        "Galeria não encontrada"
-                ));
-
-//        EnderecoModel endereco = new EnderecoModel(
-//                request.endereco().zipCode(),
-//                request.endereco().estado(),
-//                request.endereco().cidade(),
-//                request.endereco().bairro(),
-//                request.endereco().rua(),
-//                request.endereco().numero(),
-//                request.endereco().complemento()
-//        );
+         GaleriaModel galeria = buscarGaleriaDoUsuarioAutorizado(id);
 
         galeria.atualizarDados(
                 request.nome().trim(),
@@ -79,31 +61,38 @@ public class GaleriaService {
     }
 
     public List<GaleriaResponse> buscarGalerias(String nome){
+        if (currentUserService.isAdmin()){
+            return galeriaRepository
+                    .findByNomeContainingIgnoreCase(nome.trim())
+                    .stream()
+                    .map(GaleriaResponse::from)
+                    .toList();
+        }
+
         if (nome == null || nome.trim().isEmpty()){
             throw new RuntimeException("Digite um nome para buscar");
         }
 
-        return galeriaRepository.findByNomeContainingIgnoreCase(nome.trim())
+        return galeriaRepository
+                .findByNomeContainingIgnoreCaseAndDono_Id(nome.trim(), currentUserService.getCurrentUserId())
                 .stream()
                 .map(GaleriaResponse::from)
                 .toList();
     }
 
     public void delete(UUID id){
-        GaleriaModel galeria = buscarGaleriaDoUsuario(id);
+        GaleriaModel galeria = buscarGaleriaDoUsuarioAutorizado(id);
         galeriaRepository.delete(galeria);
     }
 
     public GaleriaResponse buscar(UUID id) {
-        GaleriaModel galeria = buscarGaleriaDoUsuario(id);
+        GaleriaModel galeria = buscarGaleriaDoUsuarioAutorizado(id);
 
         return GaleriaResponse.from(galeria);
     }
 
     public long contarSalas(UUID galeriaId) {
-        if (!galeriaRepository.existsById(galeriaId)) {
-            throw new RuntimeException("Galeria não encontrada");
-        }
+        buscarGaleriaDoUsuarioAutorizado(galeriaId);
         return salasRepository.countByGaleriaId(galeriaId);
     }
     public List<GaleriaResponse> buscarMinhasGalerias() {
@@ -134,11 +123,15 @@ public class GaleriaService {
                 .toList();
     }
 
-    private GaleriaModel buscarGaleriaDoUsuario(UUID galeriaId) {
+    private GaleriaModel buscarGaleriaDoUsuarioAutorizado(UUID galeriaId) {
         UUID usuarioAtual = currentUserService.getCurrentUserId();
 
         GaleriaModel galeria = galeriaRepository.findById(galeriaId)
                 .orElseThrow(() -> new RuntimeException("Galeria não encontrada"));
+
+        if (currentUserService.isAdmin()) {
+            return galeria;
+        }
 
         if (!galeria.getDono().getId().equals(usuarioAtual)) {
             throw new RuntimeException("Você não tem permissão para acessar esta galeria");

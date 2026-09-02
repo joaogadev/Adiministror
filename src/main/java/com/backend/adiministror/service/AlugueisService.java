@@ -23,6 +23,7 @@ public class AlugueisService {
     private final SalasRepository salasRepository;
     private final TenantRepository tenantRepository;
     public final TenantService tenantService;
+    private final CurrentUserService currentUserService;
 
     @Transactional
     public AluguelResponse create(UUID id, AluguelRequest request) {
@@ -35,6 +36,14 @@ public class AlugueisService {
 
         if (request.dataVencimento().isBefore(request.dataInicio())) {
             throw new RuntimeException("Data de vencimento não pode ser anterior à data de início");
+        }
+
+        if (!currentUserService.isAdmin()) {
+            UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+
+            if (!sala.getGaleria().getDono().getId().equals(usuarioAtual)) {
+                throw new RuntimeException("Você não tem permissão para alugar esta sala");
+            }
         }
 
         TenantModel tenantModel = new TenantModel(
@@ -87,8 +96,7 @@ public class AlugueisService {
     }
 
     public AluguelResponse update(UUID id, AluguelUpdateRequest request) {
-        AluguelModel aluguel = alugueisRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
+        AluguelModel aluguel = buscarAlugueisAutorizado(id);
 
         if (request.dataVencimento().isBefore(request.dataInicio())) {
             throw new RuntimeException("Data de vencimento não pode ser anterior à data de início");
@@ -103,11 +111,27 @@ public class AlugueisService {
         return AluguelResponse.from(alugueisRepository.save(aluguel));
     }
 
+    private AluguelModel buscarAlugueisAutorizado(UUID galeriaId) {
+        AluguelModel aluguel = alugueisRepository.findById(galeriaId)
+                .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
+
+        if (currentUserService.isAdmin()) {
+            return aluguel;
+        }
+
+        UUID usuarioAtual = currentUserService.getCurrentUserId();
+
+        UUID dono = aluguel.getSala().getGaleria().getDono().getId();
+
+        if (!dono.equals(usuarioAtual)) {
+            throw new RuntimeException("Você não tem permissão para acessar este aluguel");
+        }
+        return aluguel;
+    }
+
     @Transactional
     public void encerrar(UUID id) {
-        AluguelModel aluguelModel = alugueisRepository.findById(id).orElseThrow(
-                () -> new RuntimeException("Aluguel não encontrado")
-        );
+        AluguelModel aluguelModel = buscarAlugueisAutorizado(id);
 
         TenantModel tenantModel = aluguelModel.getInquilino();
 

@@ -84,7 +84,7 @@ public class TenantService {
         tenantRepository.delete(tenant);
     }
 
-    private TenantResponse buscar(UUID id) {
+    public TenantResponse buscar(UUID id) {
         return tenantRepository.findById(id)
                 .map(TenantResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
