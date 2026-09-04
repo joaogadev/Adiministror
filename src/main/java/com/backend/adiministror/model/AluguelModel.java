@@ -1,10 +1,12 @@
 package com.backend.adiministror.model;
 
+import com.backend.adiministror.model.enums.StatusAluguel;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -30,35 +32,41 @@ public class AluguelModel {
     @Column(name = "data_inicio", nullable = false)
     private LocalDate dataInicio;
 
-    @CreationTimestamp
-    @Column(name = "data_vencimento", nullable = false)
-    private LocalDate dataVencimento;
+    @Column(name = "dia_vencimento_padrao", nullable = false)
+    private Integer diaVencimentoPadrao;
+
+    private BigDecimal valorAluguel;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pagamento", nullable = false)
-    private PaymentStatus status;
+    @Column(name = "status", nullable = false)
+    private StatusAluguel status;
 
     public AluguelModel(
             SalasModel salas,
             TenantModel inquilino,
             LocalDate dataInicio,
-            LocalDate dataVencimento,
-            PaymentStatus status
+            Integer diaVencimento,
+            BigDecimal valorAluguel, StatusAluguel ativo
     ) {
         this.sala = salas;
         this.inquilino = inquilino;
         this.dataInicio = dataInicio;
-        this.dataVencimento = dataVencimento;
-        this.status = PaymentStatus.PENDENTE;
+        this.diaVencimentoPadrao = diaVencimento;
+        this.valorAluguel = valorAluguel;
+        this.status = StatusAluguel.ATIVO;
     }
 
     public void atualizarDados(
-            LocalDate dataVencimento,
+            Integer diaVencimento,
             LocalDate dataInicio,
-            PaymentStatus status
+            BigDecimal valorAluguel
     ) {
-        this.dataVencimento = dataVencimento;
+        this.diaVencimentoPadrao = diaVencimento;
         this.dataInicio = dataInicio;
-        this.status = status;
+        this.valorAluguel = valorAluguel;
+    }
+
+    public void encerrar() {
+        this.status = StatusAluguel.ENCERRADO;
     }
 }

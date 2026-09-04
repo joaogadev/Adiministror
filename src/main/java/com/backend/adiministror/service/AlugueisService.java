@@ -5,6 +5,7 @@ import com.backend.adiministror.dto.request.AluguelUpdateRequest;
 import com.backend.adiministror.dto.response.AluguelResponse;
 import com.backend.adiministror.model.AluguelModel;
 import com.backend.adiministror.model.SalasModel;
+import com.backend.adiministror.model.enums.StatusAluguel;
 import com.backend.adiministror.model.TenantModel;
 import com.backend.adiministror.repository.AlugueisRepository;
 import com.backend.adiministror.repository.SalasRepository;
@@ -13,6 +14,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,13 +24,15 @@ public class AlugueisService {
     private final AlugueisRepository alugueisRepository;
     private final SalasRepository salasRepository;
     private final TenantRepository tenantRepository;
-    public final TenantService tenantService;
+    private final TenantService tenantService;
     private final CurrentUserService currentUserService;
 
     @Transactional
     public AluguelResponse create(UUID id, AluguelRequest request) {
 
-        SalasModel sala = salasRepository.findById(id).orElseThrow(() -> new RuntimeException("Sala não encontrada"));
+        SalasModel sala = salasRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
 
         if (!currentUserService.isAdmin()) {
             UUID usuarioAtual = currentUserService.getCurrentUser().getId();
@@ -38,30 +42,22 @@ public class AlugueisService {
             }
         }
 
-        if (alugueisRepository.existsBySala_Id(id)) {
+        boolean possuiAluguelAtivo = alugueisRepository
+                .existsBySala_IdAndStatus(id, StatusAluguel.ATIVO);
+
+        if (possuiAluguelAtivo) {
             throw new RuntimeException("Sala já está alugada");
         }
 
-        if (request.dataVencimento().isBefore(request.dataInicio())) {
-            throw new RuntimeException("Data de vencimento não pode ser anterior à data de início");
-        }
+        TenantModel tenantSalvo = tenantService.buscarOuCriar(request.inquilino());
 
-        TenantModel tenantModel = new TenantModel(
-                request.inquilino().name(),
-                request.inquilino().email(),
-                request.inquilino().phone(),
-                request.inquilino().documentNumber(),
-                request.inquilino().documentType()
-        );
-
-        TenantModel tenantSalvo = tenantService.saveTenant(request.inquilino());
-
-        AluguelModel aluguel =  new AluguelModel(
+        AluguelModel aluguel = new AluguelModel(
                 sala,
                 tenantSalvo,
-                request.dataInicio(),
-                request.dataVencimento(),
-                request.status()
+                LocalDate.now(),
+                request.diaVencimentoPadrao(),
+                request.valorAluguel(),
+                StatusAluguel.ATIVO
         );
 
         AluguelModel savedAluguel = alugueisRepository.save(aluguel);
@@ -77,27 +73,29 @@ public class AlugueisService {
 
     public AluguelResponse buscarPorSala(UUID salaId) {
         AluguelModel alugel = alugueisRepository
-                .findBySala_Id(salaId)
-                .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
-
-        if (!currentUserService.isAdmin()) {
-            UUID usuarioAtual = currentUserService.getCurrentUser().getId();
-
-            if (!alugel.getSala().getGaleria().getDono().getId().equals(usuarioAtual)) {
-                throw new RuntimeException("Você não tem permissão para acessar este aluguel");
-            }
-        }
+                .findBySala_IdAndStatus(salaId, StatusAluguel.ATIVO)
+                .orElseThrow(() -> new RuntimeException("Sala não possui aluguel ativo"));
 
         return AluguelResponse.from(validarAcesso(alugel));
     }
 
-    public AluguelResponse buscarPorTenant(UUID tenantId) {
+    public List<AluguelResponse> buscarPorTenant(UUID tenantId) {
 
-        AluguelModel aluguel = alugueisRepository
-                .findByInquilino_Id(tenantId)
-                .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
+        if (!currentUserService.isAdmin()) {
+            return alugueisRepository
+                    .findByInquilino_Id(tenantId)
+                    .stream()
+                    .map(AluguelResponse::from)
+                    .toList();
+        }
 
-        return AluguelResponse.from(aluguel);
+        UUID usuarioAtual = currentUserService.getCurrentUserId();
+
+        return alugueisRepository.findByInquilino_IdAndSala_Galeria_Dono_Id(tenantId, usuarioAtual)
+                .stream()
+                .filter(aluguel -> aluguel.getSala().getGaleria().getDono().getId().equals(usuarioAtual))
+                .map(AluguelResponse::from)
+                .toList();
     }
 
     public List<AluguelResponse> buscarTodos() {
@@ -108,9 +106,9 @@ public class AlugueisService {
                     .toList();
         }
 
-        UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+        UUID usuarioAtual = currentUserService.getCurrentUserId();
 
-        return alugueisRepository.findBySala_Galeria_Dono_Id(usuarioAtual)
+        return alugueisRepository.findBySala_Galeria_Dono_IdAndStatus(usuarioAtual, StatusAluguel.ATIVO)
                 .stream()
                 .map(AluguelResponse::from)
                 .toList();
@@ -119,21 +117,17 @@ public class AlugueisService {
     public AluguelResponse update(UUID id, AluguelUpdateRequest request) {
         AluguelModel aluguel = buscarAlugueisAutorizado(id);
 
-        if (request.dataVencimento().isBefore(request.dataInicio())) {
-            throw new RuntimeException("Data de vencimento não pode ser anterior à data de início");
-        }
-
         aluguel.atualizarDados(
-            request.dataVencimento(),
+            request.diaVencimentoPadrao(),
             request.dataInicio(),
-            request.status()
+            request.valorAluguel()
         );
 
         return AluguelResponse.from(alugueisRepository.save(aluguel));
     }
 
-    private AluguelModel buscarAlugueisAutorizado(UUID galeriaId) {
-        AluguelModel aluguel = alugueisRepository.findById(galeriaId)
+    private AluguelModel buscarAlugueisAutorizado(UUID alugueisId) {
+        AluguelModel aluguel = alugueisRepository.findById(alugueisId)
                 .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
 
         return validarAcesso(aluguel);
@@ -166,9 +160,26 @@ public class AlugueisService {
     public void encerrar(UUID id) {
         AluguelModel aluguelModel = buscarAlugueisAutorizado(id);
 
+        if (aluguelModel.getStatus() == StatusAluguel.ENCERRADO) {
+            throw new RuntimeException("Aluguel já está encerrado");
+        }
+
         TenantModel tenantModel = aluguelModel.getInquilino();
 
+        aluguelModel.encerrar();
+
+        boolean possuiOutrosAlugueisAtivos = alugueisRepository.
+                existsByInquilino_IdAndStatusAndIdNot(
+                        tenantModel.getId(),
+                        StatusAluguel.ATIVO,
+                        aluguelModel.getId()
+                );
+
+        if (!possuiOutrosAlugueisAtivos) {
+            tenantModel.desativar();
+            tenantRepository.delete(tenantModel);
+        }
+
         alugueisRepository.delete(aluguelModel);
-        tenantRepository.delete(tenantModel);
     }
 }
