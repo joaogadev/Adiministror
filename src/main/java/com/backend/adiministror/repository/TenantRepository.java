@@ -17,4 +17,5 @@ public interface TenantRepository extends JpaRepository<TenantModel, UUID> {
     Optional<TenantModel> findByDocumentNumber(String documentNumber);
 
     List<TenantModel> findByNomeContainingIgnoreCase(String nome);
-}
+
+    List<TenantModel> findByAtivoTrue();}

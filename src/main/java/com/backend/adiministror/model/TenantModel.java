@@ -1,5 +1,6 @@
 package com.backend.adiministror.model;
 
+import com.backend.adiministror.model.enums.DocumentType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,7 +30,11 @@ public class TenantModel {
     private String documentNumber;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "document_type")
     private DocumentType documentType;
+
+    @Column(name = "ativo")
+    private boolean ativo = true;
 
     public TenantModel(
             String nome,
@@ -51,5 +56,13 @@ public class TenantModel {
         this.nome = nome;
         this.phone = phone;
         this.email = email;
+    }
+
+    public void ativar() {
+        this.ativo = true;
+    }
+
+    public void desativar() {
+        this.ativo = false;
     }
 }

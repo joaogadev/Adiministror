@@ -3,6 +3,7 @@ package com.backend.adiministror.service;
 import com.backend.adiministror.dto.response.TenantResponse;
 import com.backend.adiministror.dto.request.TenantResquest;
 import com.backend.adiministror.model.AluguelModel;
+import com.backend.adiministror.model.enums.StatusAluguel;
 import com.backend.adiministror.model.TenantModel;
 import com.backend.adiministror.repository.AlugueisRepository;
 import com.backend.adiministror.repository.TenantRepository;
@@ -22,36 +23,46 @@ public class TenantService {
     private final AlugueisRepository alugueisRepository;
     private final CurrentUserService currentUserService;
 
-    public TenantModel saveTenant(TenantResquest request) {
+    public TenantModel buscarOuCriar(TenantResquest request) {
 
         String normalizedEmail = normalizedEmail(request.email());
         String normalizedPhone = normalizedPhone(request.phone());
         String normalizedDocumentNumber =
                 normalizedDocumentNumber(request.documentNumber());
 
-        if (tenantRepository.existsByEmail(normalizedEmail)) {
-            throw new RuntimeException("Email já cadastrado");
-        }
+        var tenatExistente = tenantRepository.findByDocumentNumber(normalizedDocumentNumber);
 
-        if (tenantRepository.existsByDocumentNumber(normalizedDocumentNumber)) {
-            throw new RuntimeException("Documento já cadastrado");
+        if (tenatExistente.isPresent()) {
+            TenantModel tenant = tenatExistente.get();
+
+            if (tenant.getEmail().equals(normalizedEmail) && tenantRepository.existsByEmail(normalizedEmail)) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT, "Já existe um perfil com esse email"
+                );
+            }
+
+            tenant.atualizrDados(
+                    request.name(),
+                    normalizedEmail,
+                    normalizedPhone
+            );
+
+            tenant.ativar();
+
+            return tenantRepository.save(tenant);
         }
 
         TenantModel tenant = new TenantModel(
                 request.name(),
+                request.phone(),
                 normalizedEmail,
-                normalizedPhone,
                 normalizedDocumentNumber,
                 request.documentType()
         );
 
+        tenant.ativar();
+
         return tenantRepository.save(tenant);
-    }
-
-    public TenantResponse cretate(TenantResquest request) {
-        TenantModel tenant = saveTenant(request);
-
-        return TenantResponse.from(tenant);
     }
 
     public TenantResponse update(String documentNumber, TenantResquest request) {
@@ -82,12 +93,20 @@ public class TenantService {
         return TenantResponse.from(updatedTenant);
     }
 
-    private void delete(UUID id) {
-        TenantModel tenant = tenantRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+    public void desativar(UUID id, UUID aluguelId) {
+        boolean aluguelAtivo = alugueisRepository.
+                existsByInquilino_IdAndStatusAndIdNot(id, StatusAluguel.ATIVO, aluguelId);
 
-        tenantRepository.delete(tenant);
+        if (aluguelAtivo) {
+            return;
+        }
+
+        TenantModel tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+
+        tenant.desativar();
+
+        tenantRepository.save(tenant);
     }
 
     public TenantResponse buscar(UUID id) {
@@ -111,7 +130,7 @@ public class TenantService {
         UUID usuarioAtual = currentUserService.getCurrentUser().getId();
 
         return alugueisRepository
-                .findBySala_Galeria_Dono_Id(usuarioAtual)
+                .findBySala_Galeria_Dono_IdAndStatus(usuarioAtual, StatusAluguel.ATIVO)
                 .stream()
                 .map(AluguelModel::getInquilino)
                 .filter(tenant -> tenant.getNome().toLowerCase(Locale.ROOT)
@@ -145,7 +164,7 @@ public class TenantService {
 
     public List<TenantResponse> buscarTodos() {
         if (currentUserService.isAdmin()) {
-            return tenantRepository.findAll()
+            return tenantRepository.findByAtivoTrue()
                     .stream()
                     .map(TenantResponse::from)
                     .toList();
@@ -154,7 +173,7 @@ public class TenantService {
         UUID usuarioAtual = currentUserService.getCurrentUser().getId();
 
         return alugueisRepository
-                .findBySala_Galeria_Dono_Id(usuarioAtual)
+                .findBySala_Galeria_Dono_IdAndStatus(usuarioAtual, StatusAluguel.ATIVO)
                 .stream()
                 .map(AluguelModel::getInquilino)
                 .map(TenantResponse::from)
@@ -166,20 +185,7 @@ public class TenantService {
         TenantModel tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
 
-        if (!currentUserService.isAdmin()) {
-            return tenant;
-        }
-
-        AluguelModel aluguel = alugueisRepository.findByInquilino_Id(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aluguel não encontrado"));
-
-        UUID usuarioAtual = currentUserService.getCurrentUser().getId();
-
-        UUID dono = aluguel.getSala().getGaleria().getDono().getId();
-
-        if (!dono.equals(usuarioAtual)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para acessar este tenant");
-        }
+        validarAcessoTenant(id);
 
         return tenant;
     }
@@ -190,26 +196,15 @@ public class TenantService {
             return;
         }
 
-        AluguelModel aluguel =
-                alugueisRepository
-                        .findByInquilino_Id(tenantId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Aluguel não encontrado"
-                                ));
-
         UUID usuarioAtual =
                 currentUserService.getCurrentUserId();
 
-        UUID dono =
-                aluguel.getSala()
-                        .getGaleria()
-                        .getDono()
-                        .getId();
+        boolean possuiAcesso = alugueisRepository
+                .existsByInquilino_IdAndSala_Galeria_Dono_Id(tenantId, usuarioAtual);
 
-        if (!dono.equals(usuarioAtual)) {
+        if (!possuiAcesso) {
             throw new RuntimeException(
-                    "Você não tem permissão para alterar este tenant"
+                    "Você não tem permissão para acessar este tenant"
             );
         }
     }
