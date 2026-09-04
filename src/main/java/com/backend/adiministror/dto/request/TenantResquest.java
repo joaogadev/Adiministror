@@ -1,6 +1,6 @@
 package com.backend.adiministror.dto.request;
 
-import com.backend.adiministror.model.DocumentType;
+import com.backend.adiministror.model.enums.DocumentType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 

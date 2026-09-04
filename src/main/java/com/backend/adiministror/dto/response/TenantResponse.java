@@ -1,6 +1,6 @@
 package com.backend.adiministror.dto.response;
 
-import com.backend.adiministror.model.DocumentType;
+import com.backend.adiministror.model.enums.DocumentType;
 import com.backend.adiministror.model.TenantModel;
 
 import java.util.UUID;

@@ -1,9 +1,9 @@
 package com.backend.adiministror.dto.request;
 
-import com.backend.adiministror.model.PaymentStatus;
-import jakarta.validation.constraints.NotBlank;
+import com.backend.adiministror.model.enums.StatusAluguel;
 import jakarta.validation.constraints.NotNull;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record AluguelUpdateRequest(
@@ -11,8 +11,8 @@ public record AluguelUpdateRequest(
         LocalDate dataInicio,
 
         @NotNull(message = "A data de vencimento deve ser informada!")
-        LocalDate dataVencimento,
+        Integer diaVencimentoPadrao,
 
-        PaymentStatus status
+        BigDecimal valorAluguel
 ) {
 }

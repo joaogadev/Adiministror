@@ -1,8 +1,7 @@
 package com.backend.adiministror.dto.response;
 
 import com.backend.adiministror.model.AluguelModel;
-import com.backend.adiministror.model.PaymentStatus;
-import com.backend.adiministror.model.SalasModel;
+import com.backend.adiministror.model.enums.StatusAluguel;
 
 import java.util.UUID;
 
@@ -14,7 +13,7 @@ public record AluguelResponse(
         String tenantNome,
         String dataInicio,
         String dataVencimento,
-        PaymentStatus status
+        StatusAluguel status
 ) {
     public static AluguelResponse from(AluguelModel aluguel) {
         return new AluguelResponse(
@@ -24,7 +23,7 @@ public record AluguelResponse(
                 aluguel.getInquilino().getId(),
                 aluguel.getInquilino().getNome(),
                 aluguel.getDataInicio().toString(),
-                aluguel.getDataVencimento().toString(),
+                aluguel.getDiaVencimentoPadrao().toString(),
                 aluguel.getStatus()
         );
     }
