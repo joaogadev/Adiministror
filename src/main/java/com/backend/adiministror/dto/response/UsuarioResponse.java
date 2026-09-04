@@ -1,6 +1,6 @@
 package com.backend.adiministror.dto.response;
 
-import com.backend.adiministror.model.Role;
+import com.backend.adiministror.model.enums.Role;
 import com.backend.adiministror.model.UsuarioModel;
 
 import java.util.UUID;

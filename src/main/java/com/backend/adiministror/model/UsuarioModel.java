@@ -1,5 +1,6 @@
 package com.backend.adiministror.model;
 
+import com.backend.adiministror.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
