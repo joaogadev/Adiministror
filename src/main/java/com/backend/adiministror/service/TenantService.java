@@ -2,7 +2,9 @@ package com.backend.adiministror.service;
 
 import com.backend.adiministror.dto.response.TenantResponse;
 import com.backend.adiministror.dto.request.TenantResquest;
+import com.backend.adiministror.model.AluguelModel;
 import com.backend.adiministror.model.TenantModel;
+import com.backend.adiministror.repository.AlugueisRepository;
 import com.backend.adiministror.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TenantService {
     private final TenantRepository tenantRepository;
+    private final AlugueisRepository alugueisRepository;
+    private final CurrentUserService currentUserService;
 
     public TenantModel saveTenant(TenantResquest request) {
 
@@ -58,6 +62,8 @@ public class TenantService {
         TenantModel tenant = tenantRepository.findByDocumentNumber(normalizedDocumentNumber)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
 
+        validarAcessoTenant(tenant.getId());
+
         if (!tenant.getEmail().equalsIgnoreCase(normalizedEmail) && tenantRepository.existsByEmail(normalizedEmail)) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Já existe um perfil com esse email"
@@ -85,19 +91,34 @@ public class TenantService {
     }
 
     public TenantResponse buscar(UUID id) {
-        return tenantRepository.findById(id)
-                .map(TenantResponse::from)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+        TenantModel tenant = bucarTenantAutorizado(id);
+
+        return TenantResponse.from(tenant);
     }
 
     public List<TenantResponse> buscarPorNome(String nome) {
         if (nome == null || nome.trim().isEmpty()) {
             throw new RuntimeException("Digite algo para buscar!");
         }
-        return tenantRepository.findByNomeContainingIgnoreCase(nome.trim())
+
+        if (currentUserService.isAdmin()) {
+            return tenantRepository.findByNomeContainingIgnoreCase(nome.trim())
+                    .stream()
+                    .map(TenantResponse::from)
+                    .toList();
+        }
+
+        UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+
+        return alugueisRepository
+                .findBySala_Galeria_Dono_Id(usuarioAtual)
                 .stream()
+                .map(AluguelModel::getInquilino)
+                .filter(tenant -> tenant.getNome().toLowerCase(Locale.ROOT)
+                        .contains(nome.trim().toLowerCase(Locale.ROOT)))
                 .map(TenantResponse::from)
                 .toList();
+
     }
 
     public TenantResponse buscarPorDocumentNumber(String documentNumber) {
@@ -105,6 +126,8 @@ public class TenantService {
 
         TenantModel tenant = tenantRepository.findByDocumentNumber(normalizedDocumentNumber)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+
+        validarAcessoTenant(tenant.getId());
 
         return TenantResponse.from(tenant);
     }
@@ -115,14 +138,80 @@ public class TenantService {
         TenantModel tenant = tenantRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
 
+        validarAcessoTenant(tenant.getId());
+
         return TenantResponse.from(tenant);
     }
 
     public List<TenantResponse> buscarTodos() {
-        return tenantRepository.findAll()
+        if (currentUserService.isAdmin()) {
+            return tenantRepository.findAll()
+                    .stream()
+                    .map(TenantResponse::from)
+                    .toList();
+        }
+
+        UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+
+        return alugueisRepository
+                .findBySala_Galeria_Dono_Id(usuarioAtual)
                 .stream()
+                .map(AluguelModel::getInquilino)
                 .map(TenantResponse::from)
                 .toList();
+
+    }
+
+    private TenantModel bucarTenantAutorizado(UUID id) {
+        TenantModel tenant = tenantRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+
+        if (!currentUserService.isAdmin()) {
+            return tenant;
+        }
+
+        AluguelModel aluguel = alugueisRepository.findByInquilino_Id(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Aluguel não encontrado"));
+
+        UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+
+        UUID dono = aluguel.getSala().getGaleria().getDono().getId();
+
+        if (!dono.equals(usuarioAtual)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para acessar este tenant");
+        }
+
+        return tenant;
+    }
+
+    private void validarAcessoTenant(UUID tenantId) {
+
+        if (currentUserService.isAdmin()) {
+            return;
+        }
+
+        AluguelModel aluguel =
+                alugueisRepository
+                        .findByInquilino_Id(tenantId)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Aluguel não encontrado"
+                                ));
+
+        UUID usuarioAtual =
+                currentUserService.getCurrentUserId();
+
+        UUID dono =
+                aluguel.getSala()
+                        .getGaleria()
+                        .getDono()
+                        .getId();
+
+        if (!dono.equals(usuarioAtual)) {
+            throw new RuntimeException(
+                    "Você não tem permissão para alterar este tenant"
+            );
+        }
     }
 
     private String normalizedEmail(String email) {

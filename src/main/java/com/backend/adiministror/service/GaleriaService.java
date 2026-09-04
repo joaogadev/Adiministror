@@ -112,6 +112,7 @@ public class GaleriaService {
                 .toList();
     }
 
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public List<GaleriaResponse> buscarTodasGalerias(String cidade) {
         if (cidade == null || cidade.trim().isEmpty()){
             throw new RuntimeException("Digite um cidade para buscar");

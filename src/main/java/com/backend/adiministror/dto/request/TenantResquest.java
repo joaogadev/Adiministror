@@ -24,7 +24,7 @@ public record TenantResquest (
         DocumentType documentType,
 
         @Pattern(
-                regexp = "^\\+?[0-9]$",
+                regexp = "^[0-9]+$",
                 message = "O documento deve apresentar somente números"
         )
         String documentNumber
