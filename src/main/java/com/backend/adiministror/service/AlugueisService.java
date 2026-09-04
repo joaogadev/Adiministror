@@ -30,20 +30,20 @@ public class AlugueisService {
 
         SalasModel sala = salasRepository.findById(id).orElseThrow(() -> new RuntimeException("Sala não encontrada"));
 
-        if (alugueisRepository.existsBySala_Id(id)) {
-            throw new RuntimeException("Sala já está alugada");
-        }
-
-        if (request.dataVencimento().isBefore(request.dataInicio())) {
-            throw new RuntimeException("Data de vencimento não pode ser anterior à data de início");
-        }
-
         if (!currentUserService.isAdmin()) {
             UUID usuarioAtual = currentUserService.getCurrentUser().getId();
 
             if (!sala.getGaleria().getDono().getId().equals(usuarioAtual)) {
                 throw new RuntimeException("Você não tem permissão para alugar esta sala");
             }
+        }
+
+        if (alugueisRepository.existsBySala_Id(id)) {
+            throw new RuntimeException("Sala já está alugada");
+        }
+
+        if (request.dataVencimento().isBefore(request.dataInicio())) {
+            throw new RuntimeException("Data de vencimento não pode ser anterior à data de início");
         }
 
         TenantModel tenantModel = new TenantModel(
@@ -70,13 +70,25 @@ public class AlugueisService {
     }
 
     public AluguelResponse buscar(UUID id) {
-        AluguelModel aluguel = alugueisRepository.findById(id).orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
+        AluguelModel aluguel = buscarAlugueisAutorizado(id);
 
         return AluguelResponse.from(aluguel);
     }
 
     public AluguelResponse buscarPorSala(UUID salaId) {
-        return AluguelResponse.from(alugueisRepository.findBySala_Id(salaId).orElseThrow(() -> new RuntimeException("Aluguel não encontrado")));
+        AluguelModel alugel = alugueisRepository
+                .findBySala_Id(salaId)
+                .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
+
+        if (!currentUserService.isAdmin()) {
+            UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+
+            if (!alugel.getSala().getGaleria().getDono().getId().equals(usuarioAtual)) {
+                throw new RuntimeException("Você não tem permissão para acessar este aluguel");
+            }
+        }
+
+        return AluguelResponse.from(validarAcesso(alugel));
     }
 
     public AluguelResponse buscarPorTenant(UUID tenantId) {
@@ -89,7 +101,16 @@ public class AlugueisService {
     }
 
     public List<AluguelResponse> buscarTodos() {
-        return alugueisRepository.findAll()
+        if (currentUserService.isAdmin()) {
+            return alugueisRepository.findAll()
+                    .stream()
+                    .map(AluguelResponse::from)
+                    .toList();
+        }
+
+        UUID usuarioAtual = currentUserService.getCurrentUser().getId();
+
+        return alugueisRepository.findBySala_Galeria_Dono_Id(usuarioAtual)
                 .stream()
                 .map(AluguelResponse::from)
                 .toList();
@@ -115,17 +136,29 @@ public class AlugueisService {
         AluguelModel aluguel = alugueisRepository.findById(galeriaId)
                 .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
 
+        return validarAcesso(aluguel);
+    }
+
+    private AluguelModel validarAcesso(AluguelModel aluguel) {
         if (currentUserService.isAdmin()) {
             return aluguel;
         }
 
-        UUID usuarioAtual = currentUserService.getCurrentUserId();
+        UUID usuarioAtual =
+                currentUserService.getCurrentUserId();
 
-        UUID dono = aluguel.getSala().getGaleria().getDono().getId();
+        UUID dono =
+                aluguel.getSala()
+                        .getGaleria()
+                        .getDono()
+                        .getId();
 
         if (!dono.equals(usuarioAtual)) {
-            throw new RuntimeException("Você não tem permissão para acessar este aluguel");
+            throw new RuntimeException(
+                    "Você não tem permissão para acessar este aluguel"
+            );
         }
+
         return aluguel;
     }
 
