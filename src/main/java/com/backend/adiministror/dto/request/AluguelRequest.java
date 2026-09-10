@@ -12,6 +12,8 @@ public record AluguelRequest(
         @NotNull(message = "Inquilino deve ser informado!")
         TenantResquest inquilino,
 
+        LocalDate dataInicio,
+
         @NotNull(message = "A data de vencimento deve ser informada!")
         Integer diaVencimentoPadrao,
 
