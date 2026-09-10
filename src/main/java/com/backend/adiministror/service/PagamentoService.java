@@ -188,4 +188,22 @@ public class PagamentoService {
         return aluguel;
     }
 
+    @Transactional
+    public PagamentoResponse gerarPrimeiroPagamento(UUID id) {
+        AluguelModel aluguel = buscarAluguelAutorizado(id);
+
+        LocalDate competencia = aluguel.getDataInicio().withDayOfMonth(1);
+
+        LocalDate dataVencimento = calucularDataVencimento(aluguel.getDiaVencimentoPadrao(), competencia);
+
+        if (dataVencimento.getMonth() == aluguel.getDataInicio().getMonth()) {
+            competencia = competencia.plusMonths(1);
+        }
+
+        if (dataVencimento.isBefore(aluguel.getDataInicio())) {
+            competencia = competencia.plusMonths(1);
+        }
+
+        return gerarMensalidade(id, competencia);
+    }
 }
