@@ -46,7 +46,8 @@ public class AluguelModel {
             TenantModel inquilino,
             LocalDate dataInicio,
             Integer diaVencimento,
-            BigDecimal valorAluguel, StatusAluguel ativo
+            BigDecimal valorAluguel,
+            StatusAluguel ativo
     ) {
         this.sala = salas;
         this.inquilino = inquilino;

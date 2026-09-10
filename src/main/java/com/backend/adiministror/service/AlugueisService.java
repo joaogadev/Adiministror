@@ -26,6 +26,7 @@ public class AlugueisService {
     private final TenantRepository tenantRepository;
     private final TenantService tenantService;
     private final CurrentUserService currentUserService;
+    private final PagamentoService pagamentoService;
 
     @Transactional
     public AluguelResponse create(UUID id, AluguelRequest request) {
@@ -54,13 +55,15 @@ public class AlugueisService {
         AluguelModel aluguel = new AluguelModel(
                 sala,
                 tenantSalvo,
-                LocalDate.now(),
+                request.dataInicio(),
                 request.diaVencimentoPadrao(),
                 request.valorAluguel(),
                 StatusAluguel.ATIVO
         );
 
         AluguelModel savedAluguel = alugueisRepository.save(aluguel);
+
+        pagamentoService.gerarPrimeiroPagamento(savedAluguel.getId());
 
         return AluguelResponse.from(savedAluguel);
     }
@@ -81,7 +84,7 @@ public class AlugueisService {
 
     public List<AluguelResponse> buscarPorTenant(UUID tenantId) {
 
-        if (!currentUserService.isAdmin()) {
+        if (currentUserService.isAdmin()) {
             return alugueisRepository
                     .findByInquilino_Id(tenantId)
                     .stream()
@@ -93,7 +96,6 @@ public class AlugueisService {
 
         return alugueisRepository.findByInquilino_IdAndSala_Galeria_Dono_Id(tenantId, usuarioAtual)
                 .stream()
-                .filter(aluguel -> aluguel.getSala().getGaleria().getDono().getId().equals(usuarioAtual))
                 .map(AluguelResponse::from)
                 .toList();
     }
@@ -108,12 +110,13 @@ public class AlugueisService {
 
         UUID usuarioAtual = currentUserService.getCurrentUserId();
 
-        return alugueisRepository.findBySala_Galeria_Dono_IdAndStatus(usuarioAtual, StatusAluguel.ATIVO)
+        return alugueisRepository.findBySala_Galeria_Dono_Id(usuarioAtual)
                 .stream()
                 .map(AluguelResponse::from)
                 .toList();
     }
 
+    @Transactional
     public AluguelResponse update(UUID id, AluguelUpdateRequest request) {
         AluguelModel aluguel = buscarAlugueisAutorizado(id);
 
@@ -177,9 +180,9 @@ public class AlugueisService {
 
         if (!possuiOutrosAlugueisAtivos) {
             tenantModel.desativar();
-            tenantRepository.delete(tenantModel);
+            tenantRepository.save(tenantModel);
         }
 
-        alugueisRepository.delete(aluguelModel);
+        alugueisRepository.save(aluguelModel);
     }
 }
