@@ -33,6 +33,12 @@ public class PagamentoService {
 
         LocalDate competenciaNormalized = competencia.withDayOfMonth(1);
 
+        LocalDate competenciaInicioAluguel = aluguel.getDataInicio().withDayOfMonth(1);
+
+        if (competenciaNormalized.isBefore(competenciaInicioAluguel)) {
+            throw new RuntimeException("Não é possivel gerar pagamento anterior ao inicio do aluguel");
+        }
+
         boolean pagamentoExistente = pagamentoRepository
                 .existsByAluguel_IdAndCompetencia(aluguel.getId(), competenciaNormalized);
 
@@ -40,11 +46,11 @@ public class PagamentoService {
             throw new RuntimeException("Pagamento já gerado para esta competência");
         }
 
-        LocalDate dataVencimento = calucularDataVencimento(aluguel.getDiaVencimentoPadrao(), competenciaNormalized);
+        LocalDate dataVencimento = calcularDataVencimento(aluguel.getDiaVencimentoPadrao(), competenciaNormalized);
 
         PagamentoModel pagamento = new PagamentoModel(
                 aluguel,
-                competencia,
+                competenciaNormalized,
                 aluguel.getValorAluguel(),
                 dataVencimento
         );
@@ -128,7 +134,7 @@ public class PagamentoService {
 
 
 
-    private LocalDate calucularDataVencimento(Integer diaVencimentoPadrao, LocalDate competenciaNormalized) {
+    private LocalDate calcularDataVencimento(Integer diaVencimentoPadrao, LocalDate competenciaNormalized) {
         YearMonth mes = YearMonth.from(competenciaNormalized);
 
         int ultimoDiaDoMes = mes.lengthOfMonth();
@@ -194,11 +200,7 @@ public class PagamentoService {
 
         LocalDate competencia = aluguel.getDataInicio().withDayOfMonth(1);
 
-        LocalDate dataVencimento = calucularDataVencimento(aluguel.getDiaVencimentoPadrao(), competencia);
-
-        if (dataVencimento.getMonth() == aluguel.getDataInicio().getMonth()) {
-            competencia = competencia.plusMonths(1);
-        }
+        LocalDate dataVencimento = calcularDataVencimento(aluguel.getDiaVencimentoPadrao(), competencia);
 
         if (dataVencimento.isBefore(aluguel.getDataInicio())) {
             competencia = competencia.plusMonths(1);
