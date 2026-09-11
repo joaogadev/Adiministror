@@ -189,7 +189,5 @@ public class AlugueisService {
             tenantModel.desativar();
             tenantRepository.save(tenantModel);
         }
-
-        alugueisRepository.save(aluguelModel);
     }
 }
