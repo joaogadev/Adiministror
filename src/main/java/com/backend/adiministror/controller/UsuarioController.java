@@ -8,10 +8,10 @@ import com.backend.adiministror.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/usuario")
@@ -31,5 +31,15 @@ public class UsuarioController {
         LoginResponse login = usuarioService.login(request);
 
         return ResponseEntity.ok().body(login);
+    }
+
+    @GetMapping("/usuarios")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public List<ResponseEntity<UsuarioResponse>> buscarTodos() {
+        List<UsuarioResponse> usuarios = usuarioService.findAll();
+
+        return usuarios.stream()
+                .map(ResponseEntity::ok)
+                .toList();
     }
 }
