@@ -12,11 +12,20 @@ public record AluguelRequest(
         @NotNull(message = "Inquilino deve ser informado!")
         TenantResquest inquilino,
 
+        @NotNull
         LocalDate dataInicio,
 
         @NotNull(message = "A data de vencimento deve ser informada!")
+        @Min(1)
+        @Max(31)
         Integer diaVencimentoPadrao,
 
-        BigDecimal valorAluguel
+        @NotNull
+        @DecimalMin("0.01")
+        BigDecimal valorAluguel,
+
+        @Valid
+        @NotNull
+        ContratoRequest contrato
 ) {
 }

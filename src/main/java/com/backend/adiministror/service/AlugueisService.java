@@ -27,6 +27,7 @@ public class AlugueisService {
     private final TenantService tenantService;
     private final CurrentUserService currentUserService;
     private final PagamentoService pagamentoService;
+    private final ContratoService contratoService;
 
     @Transactional
     public AluguelResponse create(UUID id, AluguelRequest request) {
@@ -62,6 +63,8 @@ public class AlugueisService {
         );
 
         AluguelModel savedAluguel = alugueisRepository.save(aluguel);
+
+        contratoService.criarContratoInicial(savedAluguel.getId(), request.contrato());
 
         pagamentoService.gerarPrimeiroPagamento(savedAluguel.getId());
 
@@ -169,7 +172,11 @@ public class AlugueisService {
 
         TenantModel tenantModel = aluguelModel.getInquilino();
 
+        contratoService.encerrarContratoAtivoPorAluguel(aluguelModel.getId());
+
         aluguelModel.encerrar();
+
+        alugueisRepository.save(aluguelModel);
 
         boolean possuiOutrosAlugueisAtivos = alugueisRepository.
                 existsByInquilino_IdAndStatusAndIdNot(
