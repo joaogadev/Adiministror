@@ -56,7 +56,7 @@ public class ContratoServiceTest {
         ContratoRequest request = mock(ContratoRequest.class);
 
         LocalDate inicio = LocalDate.of(2026, 9, 7);
-        LocalDate fim = LocalDate.of(2027, 9, 8);
+        LocalDate fim = LocalDate.of(2027, 9, 7);
 
         when(alugueisRepository.findById(aluguelId)).thenReturn(Optional.of(aluguel));
         when(currentUserService.isAdmin()).thenReturn(true);
