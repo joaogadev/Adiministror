@@ -52,7 +52,6 @@ public class AlugueisService {
         }
 
         TenantModel tenantSalvo = tenantService.buscarOuCriar(request.inquilino());
-
         AluguelModel aluguel = new AluguelModel(
                 sala,
                 tenantSalvo,
