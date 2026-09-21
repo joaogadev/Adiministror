@@ -60,6 +60,7 @@ public class PagamentoService {
 
     @Transactional
     public PagamentoResponse alterarVencimento(UUID pagamentoId, LocalDate novaDataVencimento) {
+        String oiiii = "oiii";
         PagamentoModel pagamento = buscarPagamentoAutorizado(pagamentoId);
 
         pagamento.alterarVencimento(novaDataVencimento);
