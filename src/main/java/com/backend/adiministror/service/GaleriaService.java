@@ -2,6 +2,10 @@ package com.backend.adiministror.service;
 
 import com.backend.adiministror.dto.request.GaleriaRequest;
 import com.backend.adiministror.dto.response.GaleriaResponse;
+import com.backend.adiministror.exception.BusinessValidationException;
+import com.backend.adiministror.exception.ConflictException;
+import com.backend.adiministror.exception.ForbidenException;
+import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.EnderecoModel;
 import com.backend.adiministror.model.GaleriaModel;
 import com.backend.adiministror.model.UsuarioModel;
@@ -27,7 +31,7 @@ public class GaleriaService {
         UUID usuarioAtual = currentUserService.getCurrentUserId();
 
         UsuarioModel dono = usuarioRepository.findById(usuarioAtual)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
         EnderecoModel endereco = new EnderecoModel(
                 request.endereco().zipCode(),
@@ -70,7 +74,7 @@ public class GaleriaService {
         }
 
         if (nome == null || nome.trim().isEmpty()){
-            throw new RuntimeException("Digite um nome para buscar");
+            throw new BusinessValidationException("Digite um nome para buscar");
         }
 
         return galeriaRepository
@@ -115,7 +119,7 @@ public class GaleriaService {
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public List<GaleriaResponse> buscarTodasGalerias(String cidade) {
         if (cidade == null || cidade.trim().isEmpty()){
-            throw new RuntimeException("Digite um cidade para buscar");
+            throw new BusinessValidationException("Digite um cidade para buscar");
         }
 
         return galeriaRepository.findByEnderecoCidadeIgnoreCase(cidade)
@@ -128,14 +132,14 @@ public class GaleriaService {
         UUID usuarioAtual = currentUserService.getCurrentUserId();
 
         GaleriaModel galeria = galeriaRepository.findById(galeriaId)
-                .orElseThrow(() -> new RuntimeException("Galeria não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Galeria não encontrada"));
 
         if (currentUserService.isAdmin()) {
             return galeria;
         }
 
         if (!galeria.getDono().getId().equals(usuarioAtual)) {
-            throw new RuntimeException("Você não tem permissão para acessar esta galeria");
+            throw new ForbidenException("Você não tem permissão para acessar esta galeria");
         }
 
         return galeria;
@@ -144,18 +148,18 @@ public class GaleriaService {
     private List<GaleriaResponse> buscarGaleriaPorCidade(UUID galeriaId, String cidade) {
         UUID usuarioAtual = currentUserService.getCurrentUserId();
         GaleriaModel galeria = galeriaRepository.findById(galeriaId)
-                .orElseThrow(() -> new RuntimeException("Galeria não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Galeria não encontrada"));
 
         if (!galeria.getDono().getId().equals(usuarioAtual)) {
-            throw new RuntimeException("Você não tem permissão para acessar esta galeria");
+            throw new ForbidenException("Você não tem permissão para acessar esta galeria");
         }
 
         if (cidade == null || cidade.trim().isEmpty()) {
-            throw new RuntimeException("Digite uma cidade para buscar");
+            throw new BusinessValidationException("Digite uma cidade para buscar");
         }
 
         if (!galeria.getEndereco().getCidade().equalsIgnoreCase(cidade)) {
-            throw new RuntimeException("A galeria não pertence à cidade especificada");
+            throw new ConflictException("A galeria não pertence à cidade especificada");
         }
 
         return galeriaRepository.findByEnderecoCidadeIgnoreCase(cidade.trim())

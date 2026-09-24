@@ -1,6 +1,9 @@
 package com.backend.adiministror.service;
 
 import com.backend.adiministror.dto.response.PagamentoResponse;
+import com.backend.adiministror.exception.BusinessValidationException;
+import com.backend.adiministror.exception.ConflictException;
+import com.backend.adiministror.exception.ForbidenException;
 import com.backend.adiministror.model.AluguelModel;
 import com.backend.adiministror.model.PagamentoModel;
 import com.backend.adiministror.model.enums.PaymentStatus;
@@ -28,7 +31,7 @@ public class PagamentoService {
         AluguelModel aluguel = buscarAluguelAutorizado(id);
 
         if (aluguel.getStatus() != StatusAluguel.ATIVO) {
-            throw new RuntimeException("Aluguel não está ativo");
+            throw new ConflictException("Aluguel não está ativo");
         }
 
         LocalDate competenciaNormalized = competencia.withDayOfMonth(1);
@@ -36,14 +39,14 @@ public class PagamentoService {
         LocalDate competenciaInicioAluguel = aluguel.getDataInicio().withDayOfMonth(1);
 
         if (competenciaNormalized.isBefore(competenciaInicioAluguel)) {
-            throw new RuntimeException("Não é possivel gerar pagamento anterior ao inicio do aluguel");
+            throw new BusinessValidationException("Não é possivel gerar pagamento anterior ao inicio do aluguel");
         }
 
         boolean pagamentoExistente = pagamentoRepository
                 .existsByAluguel_IdAndCompetencia(aluguel.getId(), competenciaNormalized);
 
         if (pagamentoExistente) {
-            throw new RuntimeException("Pagamento já gerado para esta competência");
+            throw new ConflictException("Pagamento já gerado para esta competência");
         }
 
         LocalDate dataVencimento = calcularDataVencimento(aluguel.getDiaVencimentoPadrao(), competenciaNormalized);
@@ -59,13 +62,12 @@ public class PagamentoService {
     }
 
     @Transactional
-    public PagamentoResponse alterarVencimento(UUID pagamentoId, LocalDate novaDataVencimento) {
-        String oiiii = "oiii";
+    public void alterarVencimento(UUID pagamentoId, LocalDate novaDataVencimento) {
         PagamentoModel pagamento = buscarPagamentoAutorizado(pagamentoId);
 
         pagamento.alterarVencimento(novaDataVencimento);
 
-        return PagamentoResponse.from(pagamentoRepository.save(pagamento));
+        PagamentoResponse.from(pagamentoRepository.save(pagamento));
     }
 
     @Transactional
@@ -73,11 +75,11 @@ public class PagamentoService {
         PagamentoModel pagamento = buscarPagamentoAutorizado(pagamentoId);
 
         if (pagamento.getStatus() == PaymentStatus.PAGO) {
-            throw new RuntimeException("Pagamento já registrado");
+            throw new ConflictException("Pagamento já registrado");
         }
 
         if (dataPagamento.isAfter(LocalDate.now())) {
-            throw new RuntimeException("Data de pagamento não pode ser futura");
+            throw new BusinessValidationException("Data de pagamento não pode ser futura");
         }
 
         pagamento.registrarPagamento(dataPagamento);
@@ -163,7 +165,7 @@ public class PagamentoService {
                         .getId();
 
         if (!dono.equals(usuarioAtual)) {
-            throw new RuntimeException(
+            throw new ForbidenException(
                     "Você não tem permissão para acessar este aluguel"
             );
         }
@@ -187,7 +189,7 @@ public class PagamentoService {
         UUID dono = aluguel.getSala().getGaleria().getDono().getId();
 
         if (!dono.equals(usuarioAtual)) {
-            throw new RuntimeException(
+            throw new ForbidenException(
                     "Você não tem permissão para acessar este aluguel"
             );
         }

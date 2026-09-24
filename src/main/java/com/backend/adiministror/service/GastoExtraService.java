@@ -2,6 +2,9 @@ package com.backend.adiministror.service;
 
 import com.backend.adiministror.dto.request.GastoExtraReqeust;
 import com.backend.adiministror.dto.response.GastoExtraResponse;
+import com.backend.adiministror.exception.BusinessValidationException;
+import com.backend.adiministror.exception.ForbidenException;
+import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.GaleriaModel;
 import com.backend.adiministror.model.GastoExtraModel;
 import com.backend.adiministror.repository.GaleriaRepository;
@@ -53,7 +56,7 @@ public class GastoExtraService {
 
     public List<GastoExtraResponse> buscarGastosExtras(String nome) {
         if (nome == null || nome.trim().isEmpty()) {
-            throw new RuntimeException("Digite algo para buscar!");
+            throw new BusinessValidationException("Digite algo para buscar!");
         }
         String nomeNormalizado = nome.trim();
 
@@ -86,11 +89,11 @@ public class GastoExtraService {
         buscarGaleriaAutorizada(id);
 
         if (dataFim == null || dataInicio == null) {
-            throw new RuntimeException("Data de início e fim são obrigatórias");
+            throw new BusinessValidationException("Data de início e fim são obrigatórias");
         }
 
         if (dataFim.isBefore(dataInicio)) {
-            throw new RuntimeException("Data de fim não pode ser anterior à data de início");
+            throw new BusinessValidationException("Data de fim não pode ser anterior à data de início");
         }
 
         return gastosExtrasRepository.findByGaleria_IdAndDataGastoBetween(id, dataInicio, dataFim)
@@ -101,14 +104,14 @@ public class GastoExtraService {
 
     private GastoExtraModel buscarGastoExtraAutorizado(UUID gastosExtraId) {
         GastoExtraModel gastoExtraModel = gastosExtrasRepository.findById(gastosExtraId)
-                .orElseThrow(() -> new RuntimeException("Gasto extra não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Gasto extra não encontrado"));
 
         return validarAcesso(gastoExtraModel);
     }
 
     private GaleriaModel buscarGaleriaAutorizada(UUID galeriaId) {
         GaleriaModel galeriaModel = galeriaRepository.findById(galeriaId)
-                .orElseThrow(() -> new RuntimeException("Galeria não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Galeria não encontrada"));
 
         if (currentUserService.isAdmin()) {
             return galeriaModel;
@@ -117,7 +120,7 @@ public class GastoExtraService {
         UUID usuarioAtual = currentUserService.getCurrentUserId();
 
         if (!galeriaModel.getDono().getId().equals(usuarioAtual)) {
-            throw new RuntimeException("Você não tem permissão para acessar esta galeria");
+            throw new ForbidenException("Você não tem permissão para acessar esta galeria");
         }
 
         return galeriaModel;
@@ -136,7 +139,7 @@ public class GastoExtraService {
 
 
         if (!dono.equals(usuarioAtual)) {
-            throw new RuntimeException(
+            throw new ForbidenException(
                     "Você não tem permissão para acessar este gasto"
             );
         }

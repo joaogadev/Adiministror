@@ -2,6 +2,9 @@ package com.backend.adiministror.service;
 
 import com.backend.adiministror.dto.request.SalasRequest;
 import com.backend.adiministror.dto.response.SalasResponse;
+import com.backend.adiministror.exception.BusinessValidationException;
+import com.backend.adiministror.exception.ForbidenException;
+import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.GaleriaModel;
 import com.backend.adiministror.model.SalasModel;
 import com.backend.adiministror.repository.GaleriaRepository;
@@ -22,17 +25,17 @@ public class SalasService {
 
     public SalasResponse create(UUID galediaId, SalasRequest request) {
         GaleriaModel galeriaModel = galeriaRepository.findById(galediaId)
-                .orElseThrow(() -> new RuntimeException("Galeria não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Galeria não encontrada"));
 
         if (request.nome() == null || request.nome().trim().isEmpty()) {
-            throw new RuntimeException("Nome da sala não pode ser vazio");
+            throw new BusinessValidationException("Nome da sala não pode ser vazio");
         }
 
         if (!currentUserService.isAdmin()) {
             UUID usuarioAtual = currentUserService.getCurrentUser().getId();
 
             if (!galeriaModel.getDono().getId().equals(usuarioAtual)) {
-                throw new RuntimeException("Você não tem permissão para criar uma sala nesta galeria");
+                throw new ForbidenException("Você não tem permissão para criar uma sala nesta galeria");
             }
         }
 
@@ -68,13 +71,13 @@ public class SalasService {
 
     public List<SalasResponse> buscarPorGaleria(UUID galeriaId) {
         GaleriaModel galeria = galeriaRepository.findById(galeriaId)
-                .orElseThrow(() -> new RuntimeException("Galeria não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Galeria não encontrada"));
 
         if (!currentUserService.isAdmin()) {
             UUID usuarioAtual = currentUserService.getCurrentUser().getId();
 
             if (!galeria.getDono().getId().equals(usuarioAtual)) {
-                throw new RuntimeException("Você não tem permissão para acessar esta galeria");
+                throw new ForbidenException("Você não tem permissão para acessar esta galeria");
             }
         }
 
@@ -87,13 +90,13 @@ public class SalasService {
         return salasRepository
                 .findByIdAndGaleriaId(id, galeriaId)
                 .map(SalasResponse::from)
-                .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Sala não encontrada"));
 
     }
 
     private SalasModel buscarSalasAutorizadas(UUID id) {
         SalasModel sala = salasRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Sala não encontrada"));
 
         if (currentUserService.isAdmin()) {
             return sala;
@@ -104,7 +107,7 @@ public class SalasService {
         UUID donoGaleria = sala.getGaleria().getDono().getId();
 
         if (!donoGaleria.equals(usuarioAtual)) {
-            throw new RuntimeException("Você não tem permissão para acessar esta sala");
+            throw new ForbidenException("Você não tem permissão para acessar esta sala");
         }
 
         return sala;
@@ -119,7 +122,7 @@ public class SalasService {
                     .toList();
         }
         if (nome == null || nome.trim().isEmpty()) {
-            throw new RuntimeException("Digite algo para buscar!");
+            throw new BusinessValidationException("Digite algo para buscar!");
         }
         return salasRepository
                 .findByNomeContainingIgnoreCaseGaleria_Dono_Id(nome.trim(), currentUserService.getCurrentUserId())

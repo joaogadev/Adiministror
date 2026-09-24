@@ -2,6 +2,10 @@ package com.backend.adiministror.service;
 
 import com.backend.adiministror.dto.response.TenantResponse;
 import com.backend.adiministror.dto.request.TenantResquest;
+import com.backend.adiministror.exception.BusinessValidationException;
+import com.backend.adiministror.exception.ConflictException;
+import com.backend.adiministror.exception.ForbidenException;
+import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.AluguelModel;
 import com.backend.adiministror.model.enums.StatusAluguel;
 import com.backend.adiministror.model.TenantModel;
@@ -36,8 +40,8 @@ public class TenantService {
             TenantModel tenant = tenatExistente.get();
 
             if (tenant.getEmail().equals(normalizedEmail) && tenantRepository.existsByEmail(normalizedEmail)) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT, "Já existe um perfil com esse email"
+                throw new ConflictException(
+                        "Já existe um perfil com esse email"
                 );
             }
 
@@ -71,13 +75,13 @@ public class TenantService {
         String normalizedDocumentNumber = normalizedDocumentNumber(documentNumber);
 
         TenantModel tenant = tenantRepository.findByDocumentNumber(normalizedDocumentNumber)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Inquilino não encontrado"));
 
         validarAcessoTenant(tenant.getId());
 
         if (!tenant.getEmail().equalsIgnoreCase(normalizedEmail) && tenantRepository.existsByEmail(normalizedEmail)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Já existe um perfil com esse email"
+            throw new ConflictException(
+                    "Já existe um perfil com esse email"
             );
         }
 
@@ -102,7 +106,7 @@ public class TenantService {
         }
 
         TenantModel tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Inquilino não encontrado"));
 
         tenant.desativar();
 
@@ -117,7 +121,7 @@ public class TenantService {
 
     public List<TenantResponse> buscarPorNome(String nome) {
         if (nome == null || nome.trim().isEmpty()) {
-            throw new RuntimeException("Digite algo para buscar!");
+            throw new BusinessValidationException("Digite algo para buscar!");
         }
 
         if (currentUserService.isAdmin()) {
@@ -144,7 +148,7 @@ public class TenantService {
         String normalizedDocumentNumber = normalizedDocumentNumber(documentNumber);
 
         TenantModel tenant = tenantRepository.findByDocumentNumber(normalizedDocumentNumber)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Inquilino não encontrado"));
 
         validarAcessoTenant(tenant.getId());
 
@@ -155,7 +159,7 @@ public class TenantService {
         String normalizedEmail = normalizedEmail(email);
 
         TenantModel tenant = tenantRepository.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Inquilino não encontrado"));
 
         validarAcessoTenant(tenant.getId());
 
@@ -183,7 +187,7 @@ public class TenantService {
 
     private TenantModel bucarTenantAutorizado(UUID id) {
         TenantModel tenant = tenantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Inquilino não encontrado"));
 
         validarAcessoTenant(id);
 
@@ -203,7 +207,7 @@ public class TenantService {
                 .existsByInquilino_IdAndSala_Galeria_Dono_Id(tenantId, usuarioAtual);
 
         if (!possuiAcesso) {
-            throw new RuntimeException(
+            throw new ForbidenException(
                     "Você não tem permissão para acessar este tenant"
             );
         }
@@ -211,7 +215,7 @@ public class TenantService {
 
     private String normalizedEmail(String email) {
         if (email == null || email.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email não pode ser vazio");
+            throw new BusinessValidationException("Email não pode ser vazio");
         }
 
         return email.toLowerCase(Locale.ROOT).trim();
@@ -226,7 +230,7 @@ public class TenantService {
 
     private String normalizedDocumentNumber(String documentNumber) {
         if (documentNumber == null || documentNumber.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Número de documento não pode ser vazio");
+            throw new BusinessValidationException("Número de documento não pode ser vazio");
         }
         return documentNumber.replaceAll("\\D", "").trim();
     }

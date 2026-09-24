@@ -3,6 +3,9 @@ package com.backend.adiministror.service;
 import com.backend.adiministror.dto.request.AluguelRequest;
 import com.backend.adiministror.dto.request.AluguelUpdateRequest;
 import com.backend.adiministror.dto.response.AluguelResponse;
+import com.backend.adiministror.exception.ConflictException;
+import com.backend.adiministror.exception.ForbidenException;
+import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.AluguelModel;
 import com.backend.adiministror.model.SalasModel;
 import com.backend.adiministror.model.enums.StatusAluguel;
@@ -34,13 +37,13 @@ public class AlugueisService {
 
         SalasModel sala = salasRepository
                 .findById(id)
-                .orElseThrow(() -> new RuntimeException("Sala não encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Sala não encontrada"));
 
         if (!currentUserService.isAdmin()) {
             UUID usuarioAtual = currentUserService.getCurrentUser().getId();
 
             if (!sala.getGaleria().getDono().getId().equals(usuarioAtual)) {
-                throw new RuntimeException("Você não tem permissão para alugar esta sala");
+                throw new ForbidenException("Você não tem permissão para alugar esta sala");
             }
         }
 
@@ -48,7 +51,7 @@ public class AlugueisService {
                 .existsBySala_IdAndStatus(id, StatusAluguel.ATIVO);
 
         if (possuiAluguelAtivo) {
-            throw new RuntimeException("Sala já está alugada");
+            throw new ConflictException("Sala já está alugada");
         }
 
         TenantModel tenantSalvo = tenantService.buscarOuCriar(request.inquilino());
@@ -153,7 +156,7 @@ public class AlugueisService {
                         .getId();
 
         if (!dono.equals(usuarioAtual)) {
-            throw new RuntimeException(
+            throw new ForbidenException(
                     "Você não tem permissão para acessar este aluguel"
             );
         }
@@ -166,7 +169,7 @@ public class AlugueisService {
         AluguelModel aluguelModel = buscarAlugueisAutorizado(id);
 
         if (aluguelModel.getStatus() == StatusAluguel.ENCERRADO) {
-            throw new RuntimeException("Aluguel já está encerrado");
+            throw new ConflictException("Aluguel já está encerrado");
         }
 
         TenantModel tenantModel = aluguelModel.getInquilino();

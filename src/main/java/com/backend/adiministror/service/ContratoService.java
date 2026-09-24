@@ -2,6 +2,10 @@ package com.backend.adiministror.service;
 
 import com.backend.adiministror.dto.request.ContratoRequest;
 import com.backend.adiministror.dto.response.ContratoResponse;
+import com.backend.adiministror.exception.BusinessValidationException;
+import com.backend.adiministror.exception.ConflictException;
+import com.backend.adiministror.exception.ForbidenException;
+import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.AluguelModel;
 import com.backend.adiministror.model.ContratoModel;
 import com.backend.adiministror.model.enums.StatusAluguel;
@@ -28,13 +32,13 @@ public class ContratoService {
         AluguelModel aluguel = buscarAluguelAutorizado(aluguelId);
 
         if (aluguel.getStatus() != StatusAluguel.ATIVO) {
-            throw new RuntimeException("Não é possível criar contrato para um aluguel encerrado");
+            throw new ConflictException("Não é possível criar contrato para um aluguel encerrado");
         }
 
         boolean possuicontratoAtivo = contratoRepository.existsByAluguel_IdAndStatus(aluguelId, StatusContrato.ATIVO);
 
         if (possuicontratoAtivo) {
-            throw new RuntimeException("Já existe um contrato ativo para este aluguel");
+            throw new ConflictException("Já existe um contrato ativo para este aluguel");
         }
 
         LocalDate dataInicio = aluguel.getDataInicio();
@@ -57,13 +61,13 @@ public class ContratoService {
         ContratoModel contrato = buscarContratoAutorizado(contratoId);
 
         if (contrato.getStatus() != StatusContrato.ATIVO) {
-            throw new RuntimeException("Somente contratos ativos podem ser renovados");
+            throw new ConflictException("Somente contratos ativos podem ser renovados");
         }
 
         AluguelModel aluguel = contrato.getAluguel();
 
         if (aluguel.getStatus() != StatusAluguel.ATIVO) {
-            throw new RuntimeException("Não é possível renovar contrato de um aluguel encerrado");
+            throw new ConflictException("Não é possível renovar contrato de um aluguel encerrado");
         }
 
         LocalDate novaDataInicio = contrato.getDataFim();
@@ -93,7 +97,7 @@ public class ContratoService {
         buscarAluguelAutorizado(aluguelId);
 
         ContratoModel contrato = contratoRepository.findByAluguel_IdAndStatus(aluguelId, StatusContrato.ATIVO)
-                .orElseThrow(() -> new RuntimeException("Contrato ativo não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Contrato ativo não encontrado"));
 
         return ContratoResponse.from(contrato);
     }
@@ -140,7 +144,7 @@ public class ContratoService {
         buscarAluguelAutorizado(aluguelId);
 
         ContratoModel contrato = contratoRepository.findByAluguel_IdAndStatus(aluguelId, StatusContrato.ATIVO)
-                .orElseThrow(() -> new RuntimeException("Contrato ativo não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Contrato ativo não encontrado"));
 
         contrato.encerrar();
 
@@ -149,11 +153,11 @@ public class ContratoService {
 
     private void validarDatas(LocalDate dataInicio, LocalDate dataFim) {
         if (dataFim == null) {
-            throw new RuntimeException("Data de fim do contrato não pode ser nula");
+            throw new BusinessValidationException("Data de fim do contrato não pode ser nula");
         }
 
         if (dataFim.isBefore(dataInicio)) {
-            throw new RuntimeException("Data de fim do contrato não pode ser anterior à data de início");
+            throw new BusinessValidationException("Data de fim do contrato não pode ser anterior à data de início");
         }
 
     }
@@ -164,14 +168,14 @@ public class ContratoService {
         }
 
         if (avisoAntecedencoa <= 0) {
-            throw new RuntimeException("Aviso de antecedência não pode ser zero ou negativo");
+            throw new BusinessValidationException("Aviso de antecedência não pode ser zero ou negativo");
         }
 
         return avisoAntecedencoa;
     }
     private ContratoModel buscarContratoAutorizado(UUID contratoId) {
         ContratoModel contrato = contratoRepository.findById(contratoId)
-                .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Contrato não encontrado"));
 
         return validarAcesso(contrato);
     }
@@ -190,7 +194,7 @@ public class ContratoService {
                         .getId();
 
         if (!dono.equals(usuarioAtual)) {
-            throw new RuntimeException(
+            throw new ForbidenException(
                     "Você não tem permissão para acessar este aluguel"
             );
         }
@@ -200,7 +204,7 @@ public class ContratoService {
 
     private AluguelModel buscarAluguelAutorizado(UUID aluguelId) {
         AluguelModel aluguel = alugueisRepository.findById(aluguelId)
-                .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Aluguel não encontrado"));
 
         if (currentUserService.isAdmin()) {
             return aluguel;
@@ -216,7 +220,7 @@ public class ContratoService {
                         .getId();
 
         if (!dono.equals(usuarioAtual)) {
-            throw new RuntimeException(
+            throw new ForbidenException(
                     "Você não tem permissão para acessar este aluguel"
             );
         }
