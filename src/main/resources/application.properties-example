@@ -1,0 +1,11 @@
+spring.application.name=adiministror
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/schema}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:sua-senha}
+
+server.port=8083
+logging.level.org.springframework.security=DEBUG
+
+app.jwt.secret=troque-essa-chave-por-uma-chave-com-pelo-menos-32-caracteres
+app.jwt.issuer=issuer-personalizado
+app.jwt.expiration-minutes=minutes-personalizado

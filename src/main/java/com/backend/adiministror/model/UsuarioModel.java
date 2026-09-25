@@ -1,16 +1,23 @@
 package com.backend.adiministror.model;
 
+import com.backend.adiministror.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
 @NoArgsConstructor
 @Getter
 @Table(name = "usuario")
-public class UsuarioModel {
+public class UsuarioModel implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,15 +33,60 @@ public class UsuarioModel {
     private String senha;
 
     @Column(name = "role", nullable = false)
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     @Column(name = "phone")
     private String phone;
 
-    public UsuarioModel(String nome, String email, String senha, Role role, String phone) {
+    public UsuarioModel(String nome, String email, String senha, String phone) {
         this.nome = nome;
         this.email = email;
         this.senha = senha;
         this.phone = phone;
+        this.role = Role.DONO;
+    }
+
+    public void atualizrDados(
+            String nome, String email, String phone
+    ) {
+        this.nome = nome;
+        this.email = email;
+        this.phone = phone;
+    }
+    public void alterarSenha(String senha) {
+        if (senha == null || senha.trim().isEmpty()) {
+            throw new RuntimeException("Senha não pode ser vazia");
+        }
+        if (senha.length() < 8) {
+            throw new RuntimeException("Senha deve ter no minimo 8 caracteres");
+        }
+
+        if (!senhaValida(senha)) throw new RuntimeException("Senha deve conter no mínimo 1 número e 1 caractere especial");
+
+        this.senha = senha;
+    }
+    public static boolean senhaValida(String senha) {
+        if (senha == null || senha.isEmpty()) {
+            return false; // Senha vazia ou nula é inválida
+        }
+        boolean temNumero = senha.matches(".*\\d.*");
+        boolean temEspecial = senha.matches(".*[^\\p{L}\\p{N}\\s].*");
+        return temNumero && temEspecial;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
+
+    @Override
+    public @Nullable String getPassword() {
+        return senha;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
     }
 }
