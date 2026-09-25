@@ -28,13 +28,18 @@ public class AluguelModel {
     @JoinColumn(name = "inquilino_id")
     private TenantModel inquilino;
 
-    @CreationTimestamp
     @Column(name = "data_inicio", nullable = false)
     private LocalDate dataInicio;
 
     @Column(name = "dia_vencimento_padrao", nullable = false)
     private Integer diaVencimentoPadrao;
 
+    @Column(
+            name = "valor_mensal",
+            nullable = false,
+            precision = 12,
+            scale = 2
+    )
     private BigDecimal valorAluguel;
 
     @Enumerated(EnumType.STRING)
