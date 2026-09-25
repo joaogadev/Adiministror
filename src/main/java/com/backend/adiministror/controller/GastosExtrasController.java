@@ -6,6 +6,7 @@ import com.backend.adiministror.service.GastoExtraService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +29,7 @@ public class GastosExtrasController {
             @Valid @RequestBody GastoExtraRequest gastoExtraRequest
     ) {
         GastoExtraResponse gastoExtra = gastoExtraService.createGastoExtra(galeriaId, gastoExtraRequest);
-        return ResponseEntity.ok().body(gastoExtra);
+        return ResponseEntity.status(HttpStatus.CREATED).body(gastoExtra);
     }
 
     @GetMapping("/{id}")
@@ -36,7 +37,7 @@ public class GastosExtrasController {
         return ResponseEntity.ok(gastoExtraService.buscar(id));
     }
 
-    @GetMapping("/buscar-nome")
+    @GetMapping("/buscar")
     public ResponseEntity<List<GastoExtraResponse>> buscarPorNome(@RequestParam String nome) {
         return ResponseEntity.ok(gastoExtraService.buscarGastosExtras(nome));
     }
