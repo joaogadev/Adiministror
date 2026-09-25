@@ -125,7 +125,7 @@ public class SalasService {
             throw new BusinessValidationException("Digite algo para buscar!");
         }
         return salasRepository
-                .findByNomeContainingIgnoreCaseGaleria_Dono_Id(nome.trim(), currentUserService.getCurrentUserId())
+                .findByNomeContainingIgnoreCaseAndGaleria_Dono_Id(nome.trim(), currentUserService.getCurrentUserId())
                 .stream()
                 .map(SalasResponse::from)
                 .toList();
