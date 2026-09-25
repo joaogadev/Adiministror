@@ -62,12 +62,12 @@ public class PagamentoService {
     }
 
     @Transactional
-    public void alterarVencimento(UUID pagamentoId, LocalDate novaDataVencimento) {
+    public PagamentoResponse alterarVencimento(UUID pagamentoId, LocalDate novaDataVencimento) {
         PagamentoModel pagamento = buscarPagamentoAutorizado(pagamentoId);
 
         pagamento.alterarVencimento(novaDataVencimento);
 
-        PagamentoResponse.from(pagamentoRepository.save(pagamento));
+        return PagamentoResponse.from(pagamentoRepository.save(pagamento));
     }
 
     @Transactional
