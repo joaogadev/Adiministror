@@ -31,15 +31,14 @@ public class TenantService {
 
         String normalizedEmail = normalizedEmail(request.email());
         String normalizedPhone = normalizedPhone(request.phone());
-        String normalizedDocumentNumber =
-                normalizedDocumentNumber(request.documentNumber());
+        String normalizedDocumentNumber = normalizedDocumentNumber(request.documentNumber());
 
         var tenatExistente = tenantRepository.findByDocumentNumber(normalizedDocumentNumber);
 
         if (tenatExistente.isPresent()) {
             TenantModel tenant = tenatExistente.get();
 
-            if (tenant.getEmail().equals(normalizedEmail) && tenantRepository.existsByEmail(normalizedEmail)) {
+            if (!tenant.getEmail().equals(normalizedEmail) && tenantRepository.existsByEmail(normalizedEmail)) {
                 throw new ConflictException(
                         "Já existe um perfil com esse email"
                 );
@@ -47,8 +46,8 @@ public class TenantService {
 
             tenant.atualizrDados(
                     request.name(),
-                    normalizedEmail,
-                    normalizedPhone
+                    normalizedPhone,
+                    normalizedEmail
             );
 
             tenant.ativar();
@@ -88,8 +87,8 @@ public class TenantService {
 
         tenant.atualizrDados(
                 request.name(),
-                normalizedEmail,
-                normalizedPhone
+                normalizedPhone,
+                normalizedEmail
         );
 
         TenantModel updatedTenant = tenantRepository.save(tenant);
