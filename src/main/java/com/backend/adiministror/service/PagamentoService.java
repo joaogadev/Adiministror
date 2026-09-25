@@ -4,6 +4,7 @@ import com.backend.adiministror.dto.response.PagamentoResponse;
 import com.backend.adiministror.exception.BusinessValidationException;
 import com.backend.adiministror.exception.ConflictException;
 import com.backend.adiministror.exception.ForbidenException;
+import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.AluguelModel;
 import com.backend.adiministror.model.PagamentoModel;
 import com.backend.adiministror.model.enums.PaymentStatus;
@@ -149,7 +150,7 @@ public class PagamentoService {
 
     private PagamentoModel buscarPagamentoAutorizado(UUID pagamentoId) {
         PagamentoModel pagamento = pagamentoRepository.findById(pagamentoId)
-                .orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Pagamento não encontrado"));
 
         if (currentUserService.isAdmin()) {
             return pagamento;
@@ -177,7 +178,7 @@ public class PagamentoService {
         AluguelModel aluguel =
                 alugueisRepository
                         .findById(aluguelId)
-                        .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Aluguel não encontrado"));
 
         if (currentUserService.isAdmin()) {
             return aluguel;

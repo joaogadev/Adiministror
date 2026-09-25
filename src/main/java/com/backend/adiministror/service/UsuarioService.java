@@ -4,6 +4,10 @@ import com.backend.adiministror.dto.request.LoginRequest;
 import com.backend.adiministror.dto.request.UsuarioRequest;
 import com.backend.adiministror.dto.response.LoginResponse;
 import com.backend.adiministror.dto.response.UsuarioResponse;
+import com.backend.adiministror.exception.BusinessValidationException;
+import com.backend.adiministror.exception.ConflictException;
+import com.backend.adiministror.exception.ForbidenException;
+import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.UsuarioModel;
 import com.backend.adiministror.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +36,7 @@ public class UsuarioService {
         String normalizedPhone = normalizedPhone(request.phone());
 
         if (usuarioRepository.existsByEmail(normalizedEmail)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email já cadastrado");
+            throw new ConflictException("Email já cadastrado");
         }
 
         String senhaHash = passwordEncoder.encode(request.senha());
@@ -62,7 +66,7 @@ public class UsuarioService {
 
             return tokenService.generatedToken(user);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas");
+            throw new ForbidenException("Credenciais inválidas");
         }
     }
 
@@ -71,7 +75,7 @@ public class UsuarioService {
         String normalizedPhone = normalizedPhone(request.phone());
 
         UsuarioModel usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Email não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Email não encontrado"));
 
         if (!email.equalsIgnoreCase(normalizedEmail)
                 && usuarioRepository.existsByEmail(normalizedEmail)) {
@@ -110,7 +114,7 @@ public class UsuarioService {
 
     private String normalizedEmail(String email) {
         if (email == null || email.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email não pode ser vazio");
+            throw new BusinessValidationException("Email não pode ser vazio");
         }
 
         return email.toLowerCase(Locale.ROOT).trim();

@@ -136,7 +136,7 @@ public class AlugueisService {
 
     private AluguelModel buscarAlugueisAutorizado(UUID alugueisId) {
         AluguelModel aluguel = alugueisRepository.findById(alugueisId)
-                .orElseThrow(() -> new RuntimeException("Aluguel não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Aluguel não encontrado"));
 
         return validarAcesso(aluguel);
     }
