@@ -156,7 +156,7 @@ public class ContratoService {
             throw new BusinessValidationException("Data de fim do contrato não pode ser nula");
         }
 
-        if (dataFim.isBefore(dataInicio)) {
+        if (!dataFim.isAfter(dataInicio)) {
             throw new BusinessValidationException("Data de fim do contrato não pode ser anterior à data de início");
         }
 
