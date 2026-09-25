@@ -1,7 +1,7 @@
 spring.application.name=adiministror
-spring.datasource.url=jdbc:postgresql://localhost:5432/schema
-spring.datasource.username=postgres
-spring.datasource.password=senha-do-postgres
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/schema}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:sua-senha}
 
 server.port=8083
 logging.level.org.springframework.security=DEBUG
