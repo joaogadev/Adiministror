@@ -65,7 +65,7 @@ public class GaleriaController {
     }
 
     @GetMapping("/{id}/salas/count")
-    public ResponseEntity<Long> contarSalas(UUID id) {
+    public ResponseEntity<Long> contarSalas(@PathVariable UUID id) {
         return ResponseEntity.ok().body(galeriaService.contarSalas(id));
     }
 }

@@ -64,10 +64,10 @@ public class PagamentoController {
 
     @PatchMapping("/{id}/pagar")
     public ResponseEntity<PagamentoResponse> resgistrarPagamento(
-            @PathVariable UUID aluguelId,
+            @PathVariable UUID id,
             @Valid @RequestBody RegistrarPagamentoRequest request
     ) {
-        return ResponseEntity.ok(pagamentoService.registrarPagamento(aluguelId, request.dataPagamento()));
+        return ResponseEntity.ok(pagamentoService.registrarPagamento(id ,request.dataPagamento()));
     }
 
     @PatchMapping("/{id}/vencimento")

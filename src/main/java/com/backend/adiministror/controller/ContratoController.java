@@ -15,7 +15,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/contratos")
 @RequiredArgsConstructor
-@PreAuthorize("HasAnyRole('ADMINISTRADOR', 'DONO')")
+@PreAuthorize("hasAnyRole('ADMINISTRADOR', 'DONO')")
 public class ContratoController {
 
     private final ContratoService contratoService;

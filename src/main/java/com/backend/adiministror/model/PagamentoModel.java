@@ -24,18 +24,16 @@ public class PagamentoModel {
     @JoinColumn(name = "aluguel_id", nullable = false)
     private AluguelModel aluguel;
 
-    @CreationTimestamp
     @Column(name = "competencia", nullable = false)
     private LocalDate competencia;
 
     @Column(name = "valor", nullable = false, precision = 12, scale = 2)
     private BigDecimal valor;
 
-    @CreationTimestamp
     @Column(name = "data_vencimento", nullable = false)
     private LocalDate dataVencimento;
 
-    @Column(name = "data_pagamento", nullable = false)
+    @Column(name = "data_pagamento")
     private LocalDate dataPagamento;
 
     @Enumerated(EnumType.STRING)

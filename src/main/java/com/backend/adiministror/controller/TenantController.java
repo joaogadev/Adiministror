@@ -30,7 +30,7 @@ public class TenantController {
     }
 
     @GetMapping("/buscar")
-    public ResponseEntity<List<TenantResponse>> buscarPorNome(@PathVariable String nome) {
+    public ResponseEntity<List<TenantResponse>> buscarPorNome(@RequestParam String nome) {
         return ResponseEntity.ok(tenantService.buscarPorNome(nome));
     }
 
