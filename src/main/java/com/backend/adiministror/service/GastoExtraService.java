@@ -1,6 +1,6 @@
 package com.backend.adiministror.service;
 
-import com.backend.adiministror.dto.request.GastoExtraReqeust;
+import com.backend.adiministror.dto.request.GastoExtraRequest;
 import com.backend.adiministror.dto.response.GastoExtraResponse;
 import com.backend.adiministror.exception.BusinessValidationException;
 import com.backend.adiministror.exception.ForbidenException;
@@ -23,7 +23,7 @@ public class GastoExtraService {
     private final GastosExtrasRepository gastosExtrasRepository;
     private final GaleriaRepository galeriaRepository;
 
-    public GastoExtraResponse createGastoExtra(UUID id, GastoExtraReqeust gastoExtraRequest) {
+    public GastoExtraResponse createGastoExtra(UUID id, GastoExtraRequest gastoExtraRequest) {
         GaleriaModel galeriaModel = buscarGaleriaAutorizada(id);
 
         GastoExtraModel gastoExtra = new GastoExtraModel(
@@ -39,7 +39,7 @@ public class GastoExtraService {
         return GastoExtraResponse.from(gastoExtraSalvo);
     }
 
-    public GastoExtraResponse updateGastoExtra(UUID id, GastoExtraReqeust gastoExtraRequest) {
+    public GastoExtraResponse updateGastoExtra(UUID id, GastoExtraRequest gastoExtraRequest) {
         GastoExtraModel gastoExtraModel = buscarGastoExtraAutorizado(id);
 
         gastoExtraModel.atualizarDados(
@@ -52,6 +52,10 @@ public class GastoExtraService {
         GastoExtraModel newGastoExtraModel = gastosExtrasRepository.save(gastoExtraModel);
 
         return GastoExtraResponse.from(newGastoExtraModel);
+    }
+
+    public GastoExtraResponse buscar(UUID id) {
+        return GastoExtraResponse.from(buscarGastoExtraAutorizado(id));
     }
 
     public List<GastoExtraResponse> buscarGastosExtras(String nome) {
