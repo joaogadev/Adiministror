@@ -1,4 +1,11 @@
 package com.backend.adiministror.dto.request;
 
-public class GerarPagamentoRequest {
+import jakarta.validation.constraints.NotNull;
+
+import java.time.LocalDate;
+
+public record GerarPagamentoRequest(
+        @NotNull
+        LocalDate competencia
+) {
 }

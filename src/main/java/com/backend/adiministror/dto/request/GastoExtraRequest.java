@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record GastoExtraReqeust(
+public record GastoExtraRequest(
         @Size(
                 min = 3, max = 255,
                 message = "O campo deve ter no mínimo 3 caracteres"
