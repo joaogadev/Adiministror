@@ -43,6 +43,6 @@ public class CurrentUserService {
 
         return authentication != null && authentication.getAuthorities()
                 .stream()
-                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMINISTRADOR"));
     }
 }
