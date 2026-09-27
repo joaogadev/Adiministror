@@ -27,4 +27,6 @@ public interface AlugueisRepository extends JpaRepository<AluguelModel, UUID> {
     Optional<AluguelModel> findBySala_IdAndStatus(UUID salaId, StatusAluguel status);
 
     List<AluguelModel> findByInquilino_IdAndSala_Galeria_Dono_Id(UUID tenantId, UUID donoId);
+
+    List<AluguelModel> findByStatus(StatusAluguel status);
 }
