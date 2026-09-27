@@ -44,6 +44,18 @@ function History({ tenant }) {
     </>
   );
 }
+
+const normalize = (value = "") =>
+    String(value)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+
+// Para caso querer implementar busca por documento
+/*const normalizeDocument = (value = "") =>
+    String(value).replace(/\D/g, "");
+*/
 export default function Inquilinos() {
   const q = useData("tenants", tenantsService.list);
   const [search, setSearch] = useState("");
@@ -53,6 +65,12 @@ export default function Inquilinos() {
     (d) => tenantsService.update(edit.documentNumber, d),
     ["tenants", "alugueis"],
   );
+
+    const filteredTenants = (q.data || []).filter((tenant) => {
+        if (!search.trim()) return true;
+
+        return normalize(tenant.nome).includes(normalize(search));
+    });
   return (
     <>
       <PageHeader
@@ -67,19 +85,13 @@ export default function Inquilinos() {
         <SearchBox
           value={search}
           onChange={setSearch}
-          placeholder="Buscar nome, documento ou e-mail"
+          placeholder="Buscar inquilinos por nome"
         />
       </div>
       <State query={q}>
         <section className="panel table-panel">
           <RecordList
-            items={
-              q.data?.filter((t) =>
-                `${t.nome} ${t.documentNumber} ${t.email}`
-                  .toLowerCase()
-                  .includes(search.toLowerCase()),
-              ) || []
-            }
+            items={filteredTenants}
             columns={[
               { label: "Nome", key: "nome" },
               { label: "Documento", key: "documentNumber" },
