@@ -7,17 +7,21 @@ import com.backend.adiministror.exception.ConflictException;
 import com.backend.adiministror.exception.ForbidenException;
 import com.backend.adiministror.exception.ResourceNotFoundException;
 import com.backend.adiministror.model.AluguelModel;
+import com.backend.adiministror.model.PagamentoModel;
 import com.backend.adiministror.model.SalasModel;
 import com.backend.adiministror.model.enums.StatusAluguel;
 import com.backend.adiministror.model.TenantModel;
 import com.backend.adiministror.repository.AlugueisRepository;
+import com.backend.adiministror.repository.PagamentoRepository;
 import com.backend.adiministror.repository.SalasRepository;
 import com.backend.adiministror.repository.TenantRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +35,7 @@ public class AlugueisService {
     private final CurrentUserService currentUserService;
     private final PagamentoService pagamentoService;
     private final ContratoService contratoService;
+    private final PagamentoRepository pagamentoRepository;
 
     @Transactional
     public AluguelResponse create(UUID id, AluguelRequest request) {
@@ -71,6 +76,33 @@ public class AlugueisService {
         pagamentoService.gerarPrimeiroPagamento(savedAluguel.getId());
 
         return AluguelResponse.from(savedAluguel);
+    }
+
+    @Scheduled(cron = "0 0 1 * * *") // Executa todo dia 1º do mês à meia-noite
+    @Transactional
+    public void gerarMensalidade() {
+        LocalDate competencia = LocalDate.now().withDayOfMonth(1);
+
+        List<AluguelModel> alugueisAtivos = alugueisRepository.findByStatus(StatusAluguel.ATIVO);
+
+        for (AluguelModel aluguel : alugueisAtivos) {
+            boolean existe = pagamentoRepository.existsByAluguel_IdAndCompetencia(aluguel.getId(), competencia);
+
+            if (existe) {
+                continue;
+            }
+
+            LocalDate vencimento = calcularVencimento(aluguel.getDiaVencimentoPadrao(), competencia);
+
+            PagamentoModel pagamento = new PagamentoModel(
+                    aluguel,
+                    competencia,
+                    aluguel.getValorAluguel(),
+                    vencimento
+            );
+
+            pagamentoRepository.save(pagamento);
+        }
     }
 
     public AluguelResponse buscar(UUID id) {
@@ -162,6 +194,14 @@ public class AlugueisService {
         }
 
         return aluguel;
+    }
+
+    private LocalDate calcularVencimento(Integer diaVencimento, LocalDate competencia) {
+        YearMonth mes = YearMonth.from(competencia);
+
+        int dia = Math.min(diaVencimento, mes.lengthOfMonth());
+
+        return mes.atDay(dia);
     }
 
     @Transactional

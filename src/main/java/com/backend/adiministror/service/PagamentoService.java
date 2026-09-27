@@ -85,7 +85,11 @@ public class PagamentoService {
 
         pagamento.registrarPagamento(dataPagamento);
 
-        return PagamentoResponse.from(pagamentoRepository.save(pagamento));
+        PagamentoModel pagamentoSalvo = pagamentoRepository.save(pagamento);
+
+        gerarProximaMensalidadeSeNecessario(pagamentoSalvo);
+
+        return PagamentoResponse.from(pagamentoSalvo);
     }
 
     public PagamentoResponse buscar(UUID pagamentoId) {
@@ -136,7 +140,32 @@ public class PagamentoService {
                 .toList();
     }
 
+    private void gerarProximaMensalidadeSeNecessario(PagamentoModel pagamento) {
+        AluguelModel aluguel = pagamento.getAluguel();
 
+        if (aluguel.getStatus() != StatusAluguel.ATIVO) {
+            return;
+        }
+
+        LocalDate proximaCompetencia = pagamento.getCompetencia().plusMonths(1).withDayOfMonth(1);
+
+        boolean pagamentoExiste = pagamentoRepository.existsByAluguel_IdAndCompetencia(aluguel.getId(), proximaCompetencia);
+
+        if (pagamentoExiste) {
+            return;
+        }
+
+        LocalDate novoVencimento = calcularDataVencimento(aluguel.getDiaVencimentoPadrao(), proximaCompetencia);
+
+        PagamentoModel novoPagamento = new PagamentoModel(
+                aluguel,
+                proximaCompetencia,
+                aluguel.getValorAluguel(),
+                novoVencimento
+        );
+
+        pagamentoRepository.save(novoPagamento);
+    }
 
     private LocalDate calcularDataVencimento(Integer diaVencimentoPadrao, LocalDate competenciaNormalized) {
         YearMonth mes = YearMonth.from(competenciaNormalized);
