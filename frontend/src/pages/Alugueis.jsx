@@ -230,7 +230,7 @@ function RentalWizard({ onClose }) {
       )}
       {step === 1 && (
         <State query={rooms}>
-          <State query={rents}>
+          <State query={rents} allowEmpty>
             <div className="room-options">
               {rooms.data
                 ?.filter((r) => !occupied(r.id, rents.data || []))

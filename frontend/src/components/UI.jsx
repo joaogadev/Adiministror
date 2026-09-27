@@ -40,6 +40,7 @@ export function State({
   children,
   empty = "Nenhum registro encontrado.",
   action,
+  allowEmpty = false,
 }) {
   if (query.isPending)
     return (
@@ -60,7 +61,7 @@ export function State({
         </button>
       </div>
     );
-  if (!query.data || (Array.isArray(query.data) && !query.data.length))
+  if (!query.data || (!allowEmpty && Array.isArray(query.data) && !query.data.length))
     return (
       <div className="state">
         <Inbox />
