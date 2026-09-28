@@ -1,8 +1,3 @@
-FROM ubuntu:latest
-LABEL authors="joaog"
-
-ENTRYPOINT ["top", "-b"]
-
 # compila o projeto
 from maven:3.9-eclipse-temurin-17 as build
 
