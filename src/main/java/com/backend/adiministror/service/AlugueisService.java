@@ -17,6 +17,8 @@ import com.backend.adiministror.repository.SalasRepository;
 import com.backend.adiministror.repository.TenantRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -76,6 +78,18 @@ public class AlugueisService {
         pagamentoService.gerarPrimeiroPagamento(savedAluguel.getId());
 
         return AluguelResponse.from(savedAluguel);
+    }
+
+    @Scheduled(cron = "0 0 1 * * *", zone = "America/Sao_Paulo") // Executa todo dia 1º do mês à meia-noite no fuso horário de São Paulo
+    @Transactional
+    public void gerarMensalidadesAutomaticamente() {
+        gerarMensalidade();
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void verificarMensalidadesAoIniciar() {
+        gerarMensalidade();
     }
 
     @Scheduled(cron = "0 0 1 * * *") // Executa todo dia 1º do mês à meia-noite
