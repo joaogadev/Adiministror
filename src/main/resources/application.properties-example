@@ -1,6 +1,12 @@
 spring.application.name=adiministror
+#Para teste local
 spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/schema}
 spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:sua-senha}
+
+#Para produção
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://host-do-banco:5432/schema}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:seu-username-do-banco}
 spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:sua-senha}
 
 server.port=8083
